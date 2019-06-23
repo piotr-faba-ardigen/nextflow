@@ -15,6 +15,8 @@
  */
 package nextflow.processor
 
+import static nextflow.processor.ErrorStrategy.*
+
 import java.nio.file.LinkOption
 import java.nio.file.NoSuchFileException
 import java.nio.file.Path
@@ -63,6 +65,9 @@ import nextflow.file.FileHelper
 import nextflow.file.FileHolder
 import nextflow.file.FilePatternSplitter
 import nextflow.script.BaseScript
+import nextflow.script.ProcessConfig
+import nextflow.script.ScriptType
+import nextflow.script.TaskBody
 import nextflow.script.params.BasicMode
 import nextflow.script.params.EachInParam
 import nextflow.script.params.EnvInParam
@@ -72,23 +77,16 @@ import nextflow.script.params.InParam
 import nextflow.script.params.MissingParam
 import nextflow.script.params.OptionalParam
 import nextflow.script.params.OutParam
-import nextflow.script.ProcessConfig
-import nextflow.script.ScriptType
 import nextflow.script.params.SetInParam
 import nextflow.script.params.SetOutParam
 import nextflow.script.params.StdInParam
 import nextflow.script.params.StdOutParam
-import nextflow.script.TaskBody
 import nextflow.script.params.ValueInParam
 import nextflow.script.params.ValueOutParam
 import nextflow.util.ArrayBag
 import nextflow.util.BlankSeparatedList
 import nextflow.util.CacheHelper
 import nextflow.util.CollectionHelper
-import static nextflow.processor.ErrorStrategy.FINISH
-import static nextflow.processor.ErrorStrategy.IGNORE
-import static nextflow.processor.ErrorStrategy.RETRY
-import static nextflow.processor.ErrorStrategy.TERMINATE
 /**
  * Implement nextflow process execution logic
  *
@@ -1531,13 +1529,17 @@ class TaskProcessor {
      * @param altName The name to be used when a temporary file is created.
      * @return The {@code Path} that will be staged in the task working folder
      */
-    protected FileHolder normalizeInputToFile( Object input, String altName ) {
+    protected FileHolder normalizeInputToFile( Object input, String altName, boolean coerceToPath ) {
 
         /*
          * when it is a local file, just return a reference holder to it
          */
         if( input instanceof Path ) {
             return new FileHolder(input)
+        }
+
+        if( coerceToPath ) {
+            return new FileHolder(normalizeToPath(input))
         }
 
         /*
@@ -1550,8 +1552,25 @@ class TaskProcessor {
         return new FileHolder(source, result)
     }
 
+    protected Path normalizeToPath( obj ) {
+        if( obj == null )
+            throw new ProcessUnrecoverableException("Path value cannot be null")
 
-    protected List<FileHolder> normalizeInputToFiles( Object obj, int count ) {
+        if( !(obj instanceof CharSequence) )
+            throw new ProcessUnrecoverableException("Not a valid path value type: ${obj.getClass().getName()} ($obj)")
+
+        def str = obj.toString().trim()
+        if( str.contains('\n') )
+            throw new ProcessUnrecoverableException("Path value cannot contain a new-line character: $str")
+        if( str.startsWith('/') )
+            return FileHelper.asPath(str)
+        if( FileHelper.getUrlProtocol(str) )
+            return FileHelper.asPath(str)
+
+        throw new ProcessUnrecoverableException("Not a valid path value: $str")
+    }
+
+    protected List<FileHolder> normalizeInputToFiles( Object obj, int count, boolean coerceToPath ) {
 
         Collection allItems = obj instanceof Collection ? obj : [obj]
         def len = allItems.size()
@@ -1559,7 +1578,7 @@ class TaskProcessor {
         // use a bag so that cache hash key is not affected by file entries order
         def files = new ArrayBag<FileHolder>(len)
         for( def item : allItems ) {
-            files << normalizeInputToFile(item, "input.${++count}")
+            files << normalizeInputToFile(item, "input.${++count}", coerceToPath)
         }
 
         return files
@@ -1619,7 +1638,7 @@ class TaskProcessor {
 
         if( !name.contains('*') && !name.contains('?') && files.size()>1 ) {
             /*
-             * The name do not contain any wildcards *BUT* when multiple files are provide
+             * When name do not contain any wildcards *BUT* multiple files are provide
              * it is managed like having a 'star' at the end of the file name
              */
             name += '*'
@@ -1760,11 +1779,11 @@ class TaskProcessor {
 
         // -- all file parameters are processed in a second pass
         //    so that we can use resolve the variables that eventually are in the file name
-        secondPass.each { FileInParam param, val ->
-
-            def fileParam = param as FileInParam
-            def normalized = normalizeInputToFiles(val,count)
-            def resolved = expandWildcards( fileParam.getFilePattern(ctx), normalized )
+        for( Map.Entry<FileInParam,?> entry : secondPass) {
+            def param = entry.key
+            def val = entry.value
+            def normalized = normalizeInputToFiles(val, count, param.isPathType())
+            def resolved = expandWildcards( param.getFilePattern(ctx), normalized )
             ctx.put( param.name, singleItemOrList(resolved, task.type) )
             count += resolved.size()
             for( FileHolder item : resolved ) {

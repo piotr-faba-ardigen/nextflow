@@ -36,6 +36,8 @@ import nextflow.util.BlankSeparatedList
 @InheritConstructors
 class FileOutParam extends BaseOutParam implements OutParam, OptionalParam {
 
+    private boolean pathType
+
     /**
      * ONLY FOR TESTING DO NOT USE
      */
@@ -255,5 +257,13 @@ class FileOutParam extends BaseOutParam implements OutParam, OptionalParam {
     String getName() {
         return nameObj ? super.getName() : null
     }
+
+    FileOutParam setPathType(boolean flag) {
+        pathType = flag
+        separatorChar = null
+        return this
+    }
+
+    boolean isPathType() { pathType }
 
 }

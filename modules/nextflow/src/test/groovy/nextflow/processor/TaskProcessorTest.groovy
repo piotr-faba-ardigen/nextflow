@@ -787,4 +787,23 @@ class TaskProcessorTest extends Specification {
 
     }
 
+    def 'should normalise to path' () {
+        given:
+        def proc = new TaskProcessor()
+
+        expect:
+        proc.normalizeToPath('/foo/bar') == '/foo/bar' as Path
+        and:
+        proc.normalizeToPath('file:///foo/bar') == '/foo/bar' as Path
+
+        when:
+        proc.normalizeToPath('abc')
+        then:
+        thrown(ProcessUnrecoverableException)
+
+        when:
+        proc.normalizeToPath(null)
+        then:
+        thrown(ProcessUnrecoverableException)
+    }
 }

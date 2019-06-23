@@ -31,7 +31,9 @@ class FileInParam extends BaseInParam  {
 
     protected filePattern
 
-    @Override String getTypeName() { 'file' }
+    protected boolean pathType
+
+    @Override String getTypeName() { pathType ? 'path' : 'file' }
 
     /**
      * Define the file name
@@ -103,5 +105,12 @@ class FileInParam extends BaseInParam  {
         else
             return value
     }
+
+    FileInParam setPathType(boolean flag) {
+        pathType = flag
+        return this
+    }
+
+    boolean isPathType() { pathType }
 
 }
