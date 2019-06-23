@@ -51,7 +51,7 @@ class FileOutParam extends BaseOutParam implements OutParam, OptionalParam {
      * When {@code true} star wildcard (*) matches hidden files (files starting with a dot char)
      * By default it does not, coherently with linux bash rule
      */
-    boolean includeHidden
+    boolean hidden
 
     /**
      * When {@code true} file pattern includes input files as well as output files.
@@ -102,13 +102,13 @@ class FileOutParam extends BaseOutParam implements OutParam, OptionalParam {
 
     @Deprecated
     FileOutParam includeHidden( boolean flag ) {
-        this.includeHidden = flag
+        this.hidden = flag
         return this
     }
 
     @Deprecated
     FileOutParam hidden( boolean flag ) {
-        this.includeHidden = flag
+        this.hidden = flag
         return this
     }
 

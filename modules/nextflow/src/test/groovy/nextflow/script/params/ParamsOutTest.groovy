@@ -458,7 +458,7 @@ class ParamsOutTest extends Specification {
 
         then:
         out0.maxDepth == null
-        !out0.includeHidden
+        !out0.hidden
         out0.followLinks
         out0.type == null
         out0.separatorChar == ':'
@@ -466,11 +466,11 @@ class ParamsOutTest extends Specification {
         !out0.optional
 
         out1.maxDepth == 5
-        out2.includeHidden
+        out2.hidden
         !out3.followLinks
         out4.type == 'file'
         out5.separatorChar == '#'
-        !out6.includeHidden
+        !out6.hidden
         out7.followLinks
         out8.type == 'dir'
         out9.glob == false
@@ -1064,7 +1064,7 @@ class ParamsOutTest extends Specification {
               output:
               path x, 
                 maxDepth:2,
-                includeHidden: false,
+                hidden: false,
                 followLinks: false,
                 type: 'file',
                 separatorChar: '#',
@@ -1073,7 +1073,7 @@ class ParamsOutTest extends Specification {
                 
               path y, 
                 maxDepth:5,
-                includeHidden: true,
+                hidden: true,
                 followLinks: true,
                 type: 'dir',
                 separatorChar: ':',
@@ -1091,7 +1091,7 @@ class ParamsOutTest extends Specification {
 
         then:
         out0.getMaxDepth() == 2
-        !out0.getIncludeHidden()
+        !out0.getHidden()
         !out0.getFollowLinks()
         out0.getType()
         out0.getSeparatorChar() == '#'
@@ -1100,7 +1100,7 @@ class ParamsOutTest extends Specification {
 
         and:
         out1.getMaxDepth() == 5
-        out1.getIncludeHidden()
+        out1.getHidden()
         out1.getFollowLinks()
         out1.getType()
         out1.getSeparatorChar() == ':'
