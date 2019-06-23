@@ -15,7 +15,8 @@
  */
 
 package nextflow.script.params
-import static test.TestParser.parseAndReturnProcess
+
+import static test.TestParser.*
 
 import java.nio.file.Path
 
@@ -23,7 +24,6 @@ import groovyx.gpars.dataflow.DataflowQueue
 import nextflow.processor.TaskContext
 import nextflow.script.TokenVar
 import nextflow.util.BlankSeparatedList
-import spock.lang.Ignore
 import spock.lang.Specification
 /**
  *
@@ -458,7 +458,7 @@ class ParamsOutTest extends Specification {
 
         then:
         out0.maxDepth == null
-        !out0.hidden
+        !out0.includeHidden
         out0.followLinks
         out0.type == null
         out0.separatorChar == ':'
@@ -466,11 +466,11 @@ class ParamsOutTest extends Specification {
         !out0.optional
 
         out1.maxDepth == 5
-        out2.hidden
+        out2.includeHidden
         !out3.followLinks
         out4.type == 'file'
         out5.separatorChar == '#'
-        !out6.hidden
+        !out6.includeHidden
         out7.followLinks
         out8.type == 'dir'
         out9.glob == false
@@ -929,19 +929,19 @@ class ParamsOutTest extends Specification {
         out0.getFilePattern() == null
         out0.getOutChannels().size()==1
         out0.getOutChannels().get(0) instanceof DataflowQueue
-        out0.isPathType()
+        out0.isPathQualifier()
 
         out1.getName() == null
         out1.getFilePattern() == 'hello.*'
         out1.getOutChannels().size()==1
         out1.getOutChannels().get(0) instanceof DataflowQueue
-        out1.isPathType()
+        out1.isPathQualifier()
 
         out2.getName() == null
         out2.getFilePattern() == 'hello.txt'
         out2.getOutChannels().size()==1
         out2.getOutChannels().get(0) instanceof DataflowQueue
-        out2.isPathType()
+        out2.isPathQualifier()
         
     }
 
@@ -980,28 +980,28 @@ class ParamsOutTest extends Specification {
         out0.outChannel instanceof DataflowQueue
         out0.outChannel == binding.channel1
         out0.isDynamic()
-        out0.isPathType()
+        out0.isPathQualifier()
 
         out1.name == null
         out1.getFilePatterns(ctx,null) == ['hola_99.fa']
         out1.outChannel instanceof DataflowQueue
         out1.outChannel == binding.channel2
         out1.isDynamic()
-        out1.isPathType()
+        out1.isPathQualifier()
 
         out2.name == null
         out2.getFilePatterns(ctx,null) == ['simple.txt']
         out2.outChannel instanceof DataflowQueue
         out2.outChannel == binding.channel3
         !out2.isDynamic()
-        out2.isPathType()
+        out2.isPathQualifier()
 
         out3.name == null
         out3.getFilePatterns(ctx,null) == ['data/sub/dir/file:hola.fa']
         out3.outChannel instanceof DataflowQueue
         out3.outChannel == binding.channel4
         out3.isDynamic()
-        out3.isPathType()
+        out3.isPathQualifier()
     }
 
     def 'test output path with set' () {
@@ -1037,88 +1037,101 @@ class ParamsOutTest extends Specification {
         out0.inner[0] instanceof FileOutParam
         (out0.inner[0] as FileOutParam).getName() == 'x'
         (out0.inner[0] as FileOutParam).getFilePatterns(ctx,null) == ['a.txt', 'b.txt', 'c.txt']
-        (out0.inner[0] as FileOutParam).isPathType()
+        (out0.inner[0] as FileOutParam).isPathQualifier()
 
         out1.inner[0] instanceof FileOutParam
         (out1.inner[0] as FileOutParam).getName() == 'y'
         (out1.inner[0] as FileOutParam).getFilePatterns(ctx,null) == ['one.txt', 'two.txt', 'three.txt']
-        (out1.inner[0] as FileOutParam).isPathType()
+        (out1.inner[0] as FileOutParam).isPathQualifier()
 
         out2.inner[0] instanceof FileOutParam
         (out2.inner[0] as FileOutParam).getName() == null
         (out2.inner[0] as FileOutParam).getFilePatterns(ctx,null) == ['sample.fa']
-        (out2.inner[0] as FileOutParam).isPathType()
+        (out2.inner[0] as FileOutParam).isPathQualifier()
 
         out3.inner[0] instanceof FileOutParam
         (out3.inner[0] as FileOutParam).getName() == null
         (out3.inner[0] as FileOutParam).getFilePatterns(ctx,null) == ['data/file:foo.fa']
-        (out3.inner[0] as FileOutParam).isPathType()
+        (out3.inner[0] as FileOutParam).isPathQualifier()
 
     }
 
-
-    @Ignore
-    def 'test output path with params'() {
-
-        setup:
+    def 'should define output path options' () {
+        given:
         def text = '''
 
-            process hola {
+            process foo {
               output:
-              file x into ch
-
-              file x maxDepth 5 into ch
-              file x hidden true into ch
-              file x followLinks false into ch
-              file x type 'file' into ch
-              file x separatorChar '#' into ch
-
-              file x hidden false into ch
-              file x followLinks true into ch
-              file x type 'dir' into ch
-              file x glob false into ch
-              file x optional true into ch
+              path x, 
+                maxDepth:2,
+                includeHidden: false,
+                followLinks: false,
+                type: 'file',
+                separatorChar: '#',
+                glob: false,
+                optional: false
+                
+              path y, 
+                maxDepth:5,
+                includeHidden: true,
+                followLinks: true,
+                type: 'dir',
+                separatorChar: ':',
+                glob: true,
+                optional: true
 
               return ''
             }
             '''
 
-        def process = parseAndReturnProcess(text, [:])
-
         when:
+        def process = parseAndReturnProcess(text, [:])
         FileOutParam out0 = process.config.getOutputs().get(0)
         FileOutParam out1 = process.config.getOutputs().get(1)
-        FileOutParam out2 = process.config.getOutputs().get(2)
-        FileOutParam out3 = process.config.getOutputs().get(3)
-        FileOutParam out4 = process.config.getOutputs().get(4)
-        FileOutParam out5 = process.config.getOutputs().get(5)
-        FileOutParam out6 = process.config.getOutputs().get(6)
-        FileOutParam out7 = process.config.getOutputs().get(7)
-        FileOutParam out8 = process.config.getOutputs().get(8)
-        FileOutParam out9 = process.config.getOutputs().get(9)
-        FileOutParam out10 = process.config.getOutputs().get(10)
 
         then:
-        out0.maxDepth == null
-        !out0.hidden
-        out0.followLinks
-        out0.type == null
-        out0.separatorChar == ':'
-        out0.glob
-        !out0.optional
+        out0.getMaxDepth() == 2
+        !out0.getIncludeHidden()
+        !out0.getFollowLinks()
+        out0.getType()
+        out0.getSeparatorChar() == '#'
+        !out0.getGlob()
+        !out0.getOptional()
 
-        out1.maxDepth == 5
-        out2.hidden
-        !out3.followLinks
-        out4.type == 'file'
-        out5.separatorChar == '#'
-        !out6.hidden
-        out7.followLinks
-        out8.type == 'dir'
-        out9.glob == false
-        out10.optional
-
+        and:
+        out1.getMaxDepth() == 5
+        out1.getIncludeHidden()
+        out1.getFollowLinks()
+        out1.getType()
+        out1.getSeparatorChar() == ':'
+        out1.getGlob()
+        out1.getOptional()
     }
 
+    def 'should set file options' () {
+        given:
+        def text = '''
+            process foo {
+              output:
+                set path(x,maxDepth:1,optional:false), path(y,maxDepth:2,optional:true)
+
+              return ''
+            }
+            '''
+
+        when:
+        def process = parseAndReturnProcess(text, [:])
+        SetOutParam out0 = process.config.getOutputs().get(0)
+        then:
+        out0.inner[0] instanceof FileOutParam
+        and:
+        (out0.inner[0] as FileOutParam).getName() == 'x'
+        (out0.inner[0] as FileOutParam).getMaxDepth() == 1
+        (out0.inner[0] as FileOutParam).getOptional() == false
+        and:
+        (out0.inner[1] as FileOutParam).getName() == 'y'
+        (out0.inner[1] as FileOutParam).getMaxDepth() == 2
+        (out0.inner[1] as FileOutParam).getOptional() == true
+    }
 
 }

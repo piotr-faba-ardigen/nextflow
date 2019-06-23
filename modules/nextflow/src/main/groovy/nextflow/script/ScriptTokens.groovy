@@ -42,9 +42,9 @@ class TokenVar {
  *      </pre>
  *
  */
-@TupleConstructor
 class TokenFileCall {
     final target
+    TokenFileCall(target)  { this.target = target }
 }
 
 /**
@@ -55,9 +55,19 @@ class TokenFileCall {
  *      </pre>
  *
  */
-@TupleConstructor
 class TokenPathCall {
     final target
+    final Map opts
+
+    TokenPathCall(target) {
+        this.target = target
+        this.opts = Collections.emptyMap()
+    }
+
+    TokenPathCall(Map opts, target) {
+        this.target = target
+        this.opts = opts
+    }
 }
 
 /**

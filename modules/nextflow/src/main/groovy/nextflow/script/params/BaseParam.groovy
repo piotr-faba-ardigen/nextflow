@@ -110,4 +110,13 @@ abstract class BaseParam implements Cloneable {
         getScriptVar(name,true)
     }
 
+    protected BaseParam setOptions(Map<String,?> opts) {
+        if( !opts )
+            return this
+
+        for( Map.Entry<String,?> entry : opts ) {
+            setProperty(entry.key, entry.value)
+        }
+        return this
+    }
 }

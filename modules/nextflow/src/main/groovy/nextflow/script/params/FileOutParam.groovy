@@ -16,6 +16,7 @@
 
 package nextflow.script.params
 
+
 import java.nio.file.Path
 
 import groovy.transform.InheritConstructors
@@ -25,8 +26,6 @@ import nextflow.exception.IllegalFileException
 import nextflow.file.FilePatternSplitter
 import nextflow.script.TokenVar
 import nextflow.util.BlankSeparatedList
-
-
 /**
  * Model a process *file* output parameter
  *
@@ -35,8 +34,6 @@ import nextflow.util.BlankSeparatedList
 @Slf4j
 @InheritConstructors
 class FileOutParam extends BaseOutParam implements OutParam, OptionalParam {
-
-    private boolean pathType
 
     /**
      * ONLY FOR TESTING DO NOT USE
@@ -48,57 +45,42 @@ class FileOutParam extends BaseOutParam implements OutParam, OptionalParam {
     /**
      * The character used to separate multiple names (pattern) in the output specification
      */
-    protected String separatorChar = ':'
+    String separatorChar = ':'
 
     /**
      * When {@code true} star wildcard (*) matches hidden files (files starting with a dot char)
      * By default it does not, coherently with linux bash rule
      */
-    protected boolean includeHidden
+    boolean includeHidden
 
     /**
      * When {@code true} file pattern includes input files as well as output files.
      * By default a file pattern matches only against files produced by the process, not
      * the ones received as input
      */
-    protected boolean includeInputs
+    boolean includeInputs
 
     /**
      * The type of path to output, either {@code file}, {@code dir} or {@code any}
      */
-    protected String type
+    String type
 
     /**
      * Maximum number of directory levels to visit (default: no limit)
      */
-    protected Integer maxDepth
+    Integer maxDepth
 
     /**
      * When true it follows symbolic links during directories tree traversal, otherwise they are managed as files (default: true)
      */
-    protected boolean followLinks = true
+    boolean followLinks = true
 
-    protected boolean glob = true
+    boolean glob = true
 
     private GString gstring
-
     private Closure<String> dynamicObj
-
     private String filePattern
-
-    String getSeparatorChar() { separatorChar }
-
-    boolean getHidden() { includeHidden }
-
-    boolean getIncludeInputs() { includeInputs }
-
-    String getType() { type }
-
-    Integer getMaxDepth() { maxDepth }
-
-    boolean getFollowLinks() { followLinks }
-
-    boolean getGlob() { glob }
+    private boolean pathQualifier
 
 
     /**
@@ -106,42 +88,50 @@ class FileOutParam extends BaseOutParam implements OutParam, OptionalParam {
      */
     boolean isDynamic() { dynamicObj || gstring != null }
 
+    @Deprecated
     FileOutParam separatorChar( String value ) {
         this.separatorChar = value
         return this
     }
 
+    @Deprecated
     FileOutParam includeInputs( boolean flag ) {
         this.includeInputs = flag
         return this
     }
 
+    @Deprecated
     FileOutParam includeHidden( boolean flag ) {
         this.includeHidden = flag
         return this
     }
 
+    @Deprecated
     FileOutParam hidden( boolean flag ) {
         this.includeHidden = flag
         return this
     }
 
+    @Deprecated
     FileOutParam type( String value ) {
         assert value in ['file','dir','any']
         type = value
         return this
     }
 
+    @Deprecated
     FileOutParam maxDepth( int value ) {
         maxDepth = value
         return this
     }
 
+    @Deprecated
     FileOutParam followLinks( boolean value ) {
         followLinks = value
         return this
     }
 
+    @Deprecated
     FileOutParam glob( boolean value ) {
         glob = value
         return this
@@ -258,12 +248,17 @@ class FileOutParam extends BaseOutParam implements OutParam, OptionalParam {
         return nameObj ? super.getName() : null
     }
 
-    FileOutParam setPathType(boolean flag) {
-        pathType = flag
+    FileOutParam setPathQualifier(boolean flag) {
+        pathQualifier = flag
         separatorChar = null
         return this
     }
 
-    boolean isPathType() { pathType }
+    boolean isPathQualifier() { pathQualifier }
+
+    @Override
+    FileOutParam setOptions(Map<String,?> opts) {
+        (FileOutParam)super.setOptions(opts)
+    }
 
 }

@@ -59,9 +59,14 @@ class SetOutParam extends BaseOutParam implements OptionalParam {
                 // note that 'filePattern' can be a string or a GString
                 create(FileOutParam).bind(item.target)
 
-            else if( item instanceof TokenPathCall )
+            else if( item instanceof TokenPathCall ) {
                 // note that 'filePattern' can be a string or a GString
-                create(FileOutParam).setPathType(true).bind(item.target)
+                create(FileOutParam)
+                        .setPathQualifier(true)
+                        .setOptions(item.opts)
+                        .bind(item.target)
+            }
+
 
             else
                 throw new IllegalArgumentException("Invalid `set` output parameter declaration -- item: ${item}")

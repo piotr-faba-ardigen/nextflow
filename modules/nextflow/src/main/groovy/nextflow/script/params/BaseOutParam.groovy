@@ -177,7 +177,7 @@ abstract class BaseOutParam extends BaseParam implements OutParam {
         return outChannels
     }
 
-    def String getName() {
+    String getName() {
 
         if( nameObj != null )
             return nameObj.toString()
@@ -186,7 +186,7 @@ abstract class BaseOutParam extends BaseParam implements OutParam {
     }
 
 
-    def BaseOutParam mode( def mode ) {
+    BaseOutParam mode( def mode ) {
         this.mode = BasicMode.parseValue(mode)
         return this
     }
