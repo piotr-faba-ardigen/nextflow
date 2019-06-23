@@ -42,14 +42,9 @@ class TokenVar {
  *      </pre>
  *
  */
+@TupleConstructor
 class TokenFileCall {
-
-    final Object target
-
-    TokenFileCall( value ) {
-        this.target = value
-    }
-
+    final target
 }
 
 /**
@@ -60,14 +55,9 @@ class TokenFileCall {
  *      </pre>
  *
  */
+@TupleConstructor
 class TokenPathCall {
-
-    final Object target
-
-    TokenPathCall( value ) {
-        this.target = value
-    }
-
+    final target
 }
 
 /**
@@ -78,7 +68,7 @@ class TokenPathCall {
  * </pre>
  *
  * @see nextflow.ast.NextflowDSLImpl
- * @see SetInParam#bind(java.lang.Object[])
+ * @see nextflow.script.params.SetInParam#bind(java.lang.Object[])
  */
 class TokenStdinCall { }
 
@@ -90,7 +80,7 @@ class TokenStdinCall { }
  * </pre>
  *
  * @see nextflow.ast.NextflowDSLImpl
- * @see SetOutParam#bind(java.lang.Object[])
+ * @see nextflow.script.params.SetOutParam#bind(java.lang.Object[])
  */
 class TokenStdoutCall { }
 
