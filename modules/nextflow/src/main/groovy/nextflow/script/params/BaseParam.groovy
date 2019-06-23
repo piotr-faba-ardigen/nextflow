@@ -64,7 +64,11 @@ abstract class BaseParam implements Cloneable {
 
     String toString() {
         def p = mapIndex == -1 ? index : "$index:$mapIndex"
-        return "${this.class.simpleName.toLowerCase()}<$p>"
+        return "${getTypeSimpleName()}<$p>"
+    }
+
+    String getTypeSimpleName() {
+        this.class.simpleName.toLowerCase()
     }
 
     /**

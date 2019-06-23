@@ -35,6 +35,8 @@ class FileInParam extends BaseInParam  {
 
     @Override String getTypeName() { pathType ? 'path' : 'file' }
 
+    @Override String getTypeSimpleName() { getTypeName() + "inparam" }
+
     /**
      * Define the file name
      */

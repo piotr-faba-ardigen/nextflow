@@ -442,7 +442,7 @@ class TaskProcessorTest extends Specification {
          * simple return a reference to it in the holder object
          */
         when:
-        holder = processor.normalizeInputToFile(localFile,null)
+        holder = processor.normalizeInputToFile(localFile,null, false)
         then:
         holder.sourceObj == localFile
         holder.storePath == localFile.toRealPath()
@@ -453,12 +453,22 @@ class TaskProcessorTest extends Specification {
          * and save to the local file system
          */
         when:
-        holder = processor.normalizeInputToFile("text data string",'simple_file_name.txt')
+        holder = processor.normalizeInputToFile("text data string",'simple_file_name.txt',false)
         then:
         holder.sourceObj == "text data string"
         holder.storePath.fileSystem == FileSystems.default
         holder.storePath.text == "text data string"
         holder.stageName == 'simple_file_name.txt'
+
+        /*
+         * when coerce to path is true, the string value is converted to a path
+         */
+        when:
+        holder = processor.normalizeInputToFile("/some/file.txt",'simple_file_name.txt',true)
+        then:
+        holder.sourceObj == '/some/file.txt' as Path
+        holder.storePath == '/some/file.txt' as Path
+        holder.stageName == 'file.txt'
 
         cleanup:
         tempFolder?.deleteDir()

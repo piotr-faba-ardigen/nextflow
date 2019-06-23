@@ -23,6 +23,7 @@ import groovyx.gpars.dataflow.DataflowQueue
 import nextflow.processor.TaskContext
 import nextflow.script.TokenVar
 import nextflow.util.BlankSeparatedList
+import spock.lang.Ignore
 import spock.lang.Specification
 /**
  *
@@ -894,5 +895,230 @@ class ParamsOutTest extends Specification {
         error = thrown(MissingPropertyException)
         error.property == 'params'
     }
+
+    /* ------------------------------------------------
+     * test path qualifier
+     * ------------------------------------------------ */
+
+    def 'test output path'() {
+
+        given:
+        def text = '''
+            process foo {
+              output:
+              path x into a
+              path 'hello.*' into b
+              path 'hello.txt' into c
+              
+              return ''
+            }
+            '''
+
+        def binding = [:]
+
+        when:
+        def process = parseAndReturnProcess(text, binding)
+        def out0 = (FileOutParam)process.config.getOutputs().get(0)
+        def out1 = (FileOutParam)process.config.getOutputs().get(1)
+        def out2 = (FileOutParam)process.config.getOutputs().get(2)
+
+        then:
+        process.config.getOutputs().size() == 3
+
+        out0.getName() == 'x'
+        out0.getFilePattern() == null
+        out0.getOutChannels().size()==1
+        out0.getOutChannels().get(0) instanceof DataflowQueue
+        out0.isPathType()
+
+        out1.getName() == null
+        out1.getFilePattern() == 'hello.*'
+        out1.getOutChannels().size()==1
+        out1.getOutChannels().get(0) instanceof DataflowQueue
+        out1.isPathType()
+
+        out2.getName() == null
+        out2.getFilePattern() == 'hello.txt'
+        out2.getOutChannels().size()==1
+        out2.getOutChannels().get(0) instanceof DataflowQueue
+        out2.isPathType()
+        
+    }
+
+
+    def 'test output path with vars'() {
+
+        setup:
+        def text = '''
+
+            process hola {
+              output:
+              path "${x}_name" into channel1
+              path "${x}_${y}.fa" into channel2
+              path "simple.txt" into channel3
+              path "data/sub/dir/file:${x}.fa" into channel4
+
+              return ''
+            }
+            '''
+
+        def binding = [:]
+        def process = parseAndReturnProcess(text, binding)
+        def ctx = [x: 'hola', y:99, z:'script_file']
+
+        when:
+        FileOutParam out0 = process.config.getOutputs().get(0)
+        FileOutParam out1 = process.config.getOutputs().get(1)
+        FileOutParam out2 = process.config.getOutputs().get(2)
+        FileOutParam out3 = process.config.getOutputs().get(3)
+
+        then:
+        process.config.getOutputs().size() == 4
+
+        out0.name == null
+        out0.getFilePatterns(ctx,null) == ['hola_name']
+        out0.outChannel instanceof DataflowQueue
+        out0.outChannel == binding.channel1
+        out0.isDynamic()
+        out0.isPathType()
+
+        out1.name == null
+        out1.getFilePatterns(ctx,null) == ['hola_99.fa']
+        out1.outChannel instanceof DataflowQueue
+        out1.outChannel == binding.channel2
+        out1.isDynamic()
+        out1.isPathType()
+
+        out2.name == null
+        out2.getFilePatterns(ctx,null) == ['simple.txt']
+        out2.outChannel instanceof DataflowQueue
+        out2.outChannel == binding.channel3
+        !out2.isDynamic()
+        out2.isPathType()
+
+        out3.name == null
+        out3.getFilePatterns(ctx,null) == ['data/sub/dir/file:hola.fa']
+        out3.outChannel instanceof DataflowQueue
+        out3.outChannel == binding.channel4
+        out3.isDynamic()
+        out3.isPathType()
+    }
+
+    def 'test output path with set' () {
+
+        given:
+        def text = '''
+
+            process hola {
+              output:
+              set path(x) into channel1
+              set path(y) into channel1
+              set path("sample.fa") into channel2
+              set path("data/file:${q}.fa") into channel3
+
+              return ''
+            }
+            '''
+
+        def binding = [:]
+        def process = parseAndReturnProcess(text, binding)
+
+        def list_x = new BlankSeparatedList(['a.txt' as Path, 'b.txt' as Path, 'c.txt' as Path])
+        def list_y = ['one.txt' as Path, 'two.txt' as Path, 'three.txt' as Path]
+        def ctx = [x: list_x, y: list_y, q: 'foo']
+
+        when:
+        SetOutParam out0 = process.config.getOutputs().get(0)
+        SetOutParam out1 = process.config.getOutputs().get(1)
+        SetOutParam out2 = process.config.getOutputs().get(2)
+        SetOutParam out3 = process.config.getOutputs().get(3)
+
+        then:
+        out0.inner[0] instanceof FileOutParam
+        (out0.inner[0] as FileOutParam).getName() == 'x'
+        (out0.inner[0] as FileOutParam).getFilePatterns(ctx,null) == ['a.txt', 'b.txt', 'c.txt']
+        (out0.inner[0] as FileOutParam).isPathType()
+
+        out1.inner[0] instanceof FileOutParam
+        (out1.inner[0] as FileOutParam).getName() == 'y'
+        (out1.inner[0] as FileOutParam).getFilePatterns(ctx,null) == ['one.txt', 'two.txt', 'three.txt']
+        (out1.inner[0] as FileOutParam).isPathType()
+
+        out2.inner[0] instanceof FileOutParam
+        (out2.inner[0] as FileOutParam).getName() == null
+        (out2.inner[0] as FileOutParam).getFilePatterns(ctx,null) == ['sample.fa']
+        (out2.inner[0] as FileOutParam).isPathType()
+
+        out3.inner[0] instanceof FileOutParam
+        (out3.inner[0] as FileOutParam).getName() == null
+        (out3.inner[0] as FileOutParam).getFilePatterns(ctx,null) == ['data/file:foo.fa']
+        (out3.inner[0] as FileOutParam).isPathType()
+
+    }
+
+
+    @Ignore
+    def 'test output path with params'() {
+
+        setup:
+        def text = '''
+
+            process hola {
+              output:
+              file x into ch
+
+              file x maxDepth 5 into ch
+              file x hidden true into ch
+              file x followLinks false into ch
+              file x type 'file' into ch
+              file x separatorChar '#' into ch
+
+              file x hidden false into ch
+              file x followLinks true into ch
+              file x type 'dir' into ch
+              file x glob false into ch
+              file x optional true into ch
+
+              return ''
+            }
+            '''
+
+        def process = parseAndReturnProcess(text, [:])
+
+        when:
+        FileOutParam out0 = process.config.getOutputs().get(0)
+        FileOutParam out1 = process.config.getOutputs().get(1)
+        FileOutParam out2 = process.config.getOutputs().get(2)
+        FileOutParam out3 = process.config.getOutputs().get(3)
+        FileOutParam out4 = process.config.getOutputs().get(4)
+        FileOutParam out5 = process.config.getOutputs().get(5)
+        FileOutParam out6 = process.config.getOutputs().get(6)
+        FileOutParam out7 = process.config.getOutputs().get(7)
+        FileOutParam out8 = process.config.getOutputs().get(8)
+        FileOutParam out9 = process.config.getOutputs().get(9)
+        FileOutParam out10 = process.config.getOutputs().get(10)
+
+        then:
+        out0.maxDepth == null
+        !out0.hidden
+        out0.followLinks
+        out0.type == null
+        out0.separatorChar == ':'
+        out0.glob
+        !out0.optional
+
+        out1.maxDepth == 5
+        out2.hidden
+        !out3.followLinks
+        out4.type == 'file'
+        out5.separatorChar == '#'
+        !out6.hidden
+        out7.followLinks
+        out8.type == 'dir'
+        out9.glob == false
+        out10.optional
+
+    }
+
 
 }

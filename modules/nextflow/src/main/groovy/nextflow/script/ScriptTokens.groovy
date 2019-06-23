@@ -53,6 +53,24 @@ class TokenFileCall {
 }
 
 /**
+ *  A token used by the DSL to identify a 'path' declaration in a 'set' parameter, for example:
+ *      <pre>
+ *      input:
+ *      set( path('name'), ... )
+ *      </pre>
+ *
+ */
+class TokenPathCall {
+
+    final Object target
+
+    TokenPathCall( value ) {
+        this.target = value
+    }
+
+}
+
+/**
  * An object of this class replace the {@code stdin} token in input map declaration. For example:
  * <pre>
  * input:
