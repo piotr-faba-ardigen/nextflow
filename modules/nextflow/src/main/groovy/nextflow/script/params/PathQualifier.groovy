@@ -16,25 +16,15 @@
 
 package nextflow.script.params
 
-import spock.lang.Specification
 /**
- *
+ * Path qualifier marker interface
+ * 
  * @author Paolo Di Tommaso <paolo.ditommaso@gmail.com>
  */
-class FileInParamTest extends Specification {
+interface PathQualifier {
 
-    def 'should set path flag' () {
+    def setPathQualifier(boolean flag)
 
-        when:
-        def param = new FileInParam(Mock(Binding), [])
-        then:
-        !param.isPathQualifier()
-
-        when:
-        param.setPathQualifier(true)
-        then:
-        param.isPathQualifier()
-    }
-    
+    boolean isPathQualifier()
 
 }

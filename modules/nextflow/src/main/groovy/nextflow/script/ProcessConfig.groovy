@@ -445,7 +445,7 @@ class ProcessConfig implements Map<String,Object>, Cloneable {
 
     InParam _in_path( Map opts=null, obj ) {
         new FileInParam(this)
-                .setPathType(true)
+                .setPathQualifier(true)
                 .bind(obj)
     }
 

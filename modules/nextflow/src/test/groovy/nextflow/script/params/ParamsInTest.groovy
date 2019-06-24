@@ -804,31 +804,31 @@ class ParamsInTest extends Specification {
         in1.filePattern == '*'
         in1.inChannel.val == FILE
         in1.index == 0
-        in1.isPathType()
+        in1.isPathQualifier()
 
         in2.name == 'f1'
         in2.filePattern == '*'
         in2.inChannel.val == FILE
         in2.index == 1
-        in2.isPathType()
+        in2.isPathQualifier()
 
         in3.name == 'f2'
         in3.filePattern == 'abc'
         in3.inChannel.val == FILE
         in3.index == 2
-        in3.isPathType()
+        in3.isPathQualifier()
 
         in4.name == 'f3'
         in4.filePattern == '*.fa'
         in4.inChannel.val == FILE
         in4.index == 3
-        in4.isPathType()
+        in4.isPathQualifier()
 
         in5.name == 'file.txt'
         in5.filePattern == 'file.txt'
         in5.inChannel.val == FILE
         in5.index == 4
-        in5.isPathType()
+        in5.isPathQualifier()
     }
 
     def 'test input paths with gstring'() {
@@ -857,12 +857,12 @@ class ParamsInTest extends Specification {
         in1.name == '__$pathinparam<0>'
         in1.getFilePattern(ctx) == 'main.txt'
         in1.inChannel.val == 'file.txt'
-        in1.isPathType()
+        in1.isPathQualifier()
 
         in2.name == '__$pathinparam<1>'
         in2.getFilePattern(ctx) == 'hello.txt'
         in2.inChannel.val == "str"
-        in2.isPathType()
+        in2.isPathQualifier()
     }
 
     def 'test set path with gstring'() {
@@ -891,12 +891,12 @@ class ParamsInTest extends Specification {
         in1.inner[0] instanceof FileInParam
         (in1.inner[0] as FileInParam).getName() == '__$pathinparam<0:0>'
         (in1.inner[0] as FileInParam).getFilePattern(ctx) == 'hola_the_file'
-        (in1.inner[0] as FileInParam).isPathType()
+        (in1.inner[0] as FileInParam).isPathQualifier()
 
         in2.inner[0] instanceof FileInParam
         (in2.inner[0] as FileInParam).name == '__$pathinparam<1:0>'
         (in2.inner[0] as FileInParam).getFilePattern(ctx) == 'the_file_name.txt'
-        (in2.inner[0] as FileInParam).isPathType()
+        (in2.inner[0] as FileInParam).isPathQualifier()
 
     }
 
@@ -932,7 +932,7 @@ class ParamsInTest extends Specification {
         in0.inner.get(1).name == 'x'
         in0.inner.get(1).filePattern == '*'
         in0.inner.get(1).mapIndex == 1
-        in0.inner.get(1).isPathType()
+        in0.inner.get(1).isPathQualifier()
 
         in1.inner.get(0) instanceof ValueInParam
         in1.inner.get(0).name == 'p'
@@ -941,7 +941,7 @@ class ParamsInTest extends Specification {
         in1.inner.get(1).name == 'txt'
         in1.inner.get(1).filePattern == 'txt'
         in1.inner.get(1).mapIndex == 1
-        in1.inner.get(1).isPathType()
+        in1.inner.get(1).isPathQualifier()
 
         in2.inner.get(0) instanceof ValueInParam
         in2.inner.get(0).name == 'v'
@@ -950,7 +950,7 @@ class ParamsInTest extends Specification {
         in2.inner.get(1).name == 'xx'
         in2.inner.get(1).filePattern == 'yy'
         in2.inner.get(1).mapIndex == 1
-        in2.inner.get(1).isPathType()
+        in2.inner.get(1).isPathQualifier()
 
     }
 
@@ -990,7 +990,7 @@ class ParamsInTest extends Specification {
         in0.inner instanceof FileInParam
         (in0.inner as FileInParam).name == 'foo'
         (in0.inner as FileInParam).owner == in0
-        (in0.inner as FileInParam).isPathType()
+        (in0.inner as FileInParam).isPathQualifier()
 
         in1.class == EachInParam
         in1.name == '__$eachinparam<1>'
@@ -1000,7 +1000,7 @@ class ParamsInTest extends Specification {
         (in1.inner as FileInParam).name == 'bar'
         (in1.inner as FileInParam).filePattern == 'bar'
         (in1.inner as FileInParam).owner == in1
-        (in1.inner as FileInParam).isPathType()
+        (in1.inner as FileInParam).isPathQualifier()
 
     }
 

@@ -49,7 +49,7 @@ class SetInParam extends BaseInParam {
                 newItem(FileInParam).bind( item.target )
 
             else if( item instanceof TokenPathCall )
-                newItem(FileInParam).setPathType(true).bind( item.target )
+                newItem(FileInParam).setPathQualifier(true).bind( item.target )
 
             else if( item instanceof Map )
                 newItem(FileInParam).bind(item)

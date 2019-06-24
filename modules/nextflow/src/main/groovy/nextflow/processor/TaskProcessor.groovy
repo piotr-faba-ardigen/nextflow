@@ -1782,7 +1782,7 @@ class TaskProcessor {
         for( Map.Entry<FileInParam,?> entry : secondPass) {
             def param = entry.key
             def val = entry.value
-            def normalized = normalizeInputToFiles(val, count, param.isPathType())
+            def normalized = normalizeInputToFiles(val, count, param.isPathQualifier())
             def resolved = expandWildcards( param.getFilePattern(ctx), normalized )
             ctx.put( param.name, singleItemOrList(resolved, task.type) )
             count += resolved.size()

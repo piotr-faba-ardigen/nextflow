@@ -33,7 +33,7 @@ import nextflow.util.BlankSeparatedList
  */
 @Slf4j
 @InheritConstructors
-class FileOutParam extends BaseOutParam implements OutParam, OptionalParam {
+class FileOutParam extends BaseOutParam implements OutParam, OptionalParam, PathQualifier {
 
     /**
      * ONLY FOR TESTING DO NOT USE
@@ -248,12 +248,14 @@ class FileOutParam extends BaseOutParam implements OutParam, OptionalParam {
         return nameObj ? super.getName() : null
     }
 
+    @Override
     FileOutParam setPathQualifier(boolean flag) {
         pathQualifier = flag
         separatorChar = null
         return this
     }
 
+    @Override
     boolean isPathQualifier() { pathQualifier }
 
     @Override

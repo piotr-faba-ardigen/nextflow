@@ -57,7 +57,7 @@ class EachInParam extends BaseInParam {
         
         if( obj instanceof TokenPathCall ) {
             return new FileInParam(binding, inner, index)
-                    .setPathType(true)
+                    .setPathQualifier(true)
                     .bind(obj.target)
         }
 
