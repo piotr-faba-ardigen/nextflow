@@ -1265,8 +1265,8 @@ class TaskProcessor {
 
             else if( param.mode == SetOutParam.CombineMode.combine ) {
                 log.trace "Process $name > Combining out param: ${param} = ${list}"
-                def combs = list.combinations()
-                combs.each { bindOutParam(param, it) }
+                final combs = (List<List>)list.combinations()
+                for( def it : combs ) { bindOutParam(param, it) }
             }
 
             else
@@ -1282,7 +1282,7 @@ class TaskProcessor {
     protected void bindOutParam( OutParam param, List values ) {
         log.trace "<$name> Binding param $param with $values"
         def x = values.size() == 1 ? values[0] : values
-        param.getOutChannels().each { it.bind(x) }
+        for( def it : param.getOutChannels() ) { it.bind(x) }
     }
 
     protected void collectOutputs( TaskRun task ) {

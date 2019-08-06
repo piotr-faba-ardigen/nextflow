@@ -49,7 +49,7 @@ abstract class BaseOutParam extends BaseParam implements OutParam {
         super(binding,list,ownerIndex)
     }
 
-    BaseOutParam(ProcessConfig config ) {
+    BaseOutParam( ProcessConfig config ) {
         super(config.getOwnerScript().getBinding(), config.getOutputs())
     }
 

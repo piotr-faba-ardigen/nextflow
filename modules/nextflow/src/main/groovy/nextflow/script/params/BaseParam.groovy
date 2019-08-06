@@ -26,12 +26,22 @@ import groovy.util.logging.Slf4j
 @Slf4j
 abstract class BaseParam implements Cloneable {
 
+    /**
+     * The binding context to resolve param variables
+     */
     final protected Binding binding
 
     final protected List<BaseParam> holder
 
+    /**
+     * The param declaration index in the input/output block
+     * Note the index do not change for nested parameters ie. declared in the same tuple param
+     */
     final short index
 
+    /**
+     * The nested index of tuple composed parameters or -1 when it's a top level param ie. not a tuple element
+     */
     final short mapIndex
 
     private boolean initialized
@@ -118,5 +128,9 @@ abstract class BaseParam implements Cloneable {
             setProperty(entry.key, entry.value)
         }
         return this
+    }
+
+    boolean isNestedParam() {
+        return mapIndex >= 0
     }
 }

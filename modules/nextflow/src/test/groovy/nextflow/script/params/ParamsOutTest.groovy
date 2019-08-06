@@ -1134,4 +1134,36 @@ class ParamsOutTest extends Specification {
         (out0.inner[1] as FileOutParam).getOptional() == true
     }
 
+
+    def 'should check is tuple item' () {
+
+        setup:
+        def text = '''
+            
+            process hola {
+              output:
+              val x into ch
+              set x, file(x) into ch
+
+              /command/
+            }
+            '''
+        when:
+
+
+        def process = parseAndReturnProcess(text)
+        def out0 = (ValueOutParam)process.config.getOutputs().get(0)
+        def out1 = (SetOutParam)process.config.getOutputs().get(1)
+
+        then:
+        !out0.isNestedParam()
+        !out1.isNestedParam()
+        (out1.inner[0] as BaseOutParam).isNestedParam()
+        (out1.inner[1] as BaseOutParam).isNestedParam()
+
+        out0.index == 0
+        out1.index == 1
+        (out1.inner[0] as ValueOutParam).index == 1
+        (out1.inner[1] as FileOutParam).index == 1
+    }
 }

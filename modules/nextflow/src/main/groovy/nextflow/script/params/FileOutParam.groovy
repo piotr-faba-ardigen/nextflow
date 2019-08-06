@@ -44,7 +44,12 @@ class FileOutParam extends BaseOutParam implements OutParam, OptionalParam, Path
 
     /**
      * The character used to separate multiple names (pattern) in the output specification
+     *
+     * This is only used by `file` qualifier. It's not supposed to be used anymore
+     * by the new `path` qualifier.
+     *
      */
+    @Deprecated
     String separatorChar = ':'
 
     /**

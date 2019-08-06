@@ -1004,4 +1004,33 @@ class ParamsInTest extends Specification {
 
     }
 
+
+    def 'should check is tuple item' () {
+
+        setup:
+        def text = '''
+            ch = 'something'
+            
+            process hola {
+              input:
+              val x from ch
+              set x, file(x) from ch
+
+              /command/
+            }
+            '''
+        when:
+
+
+        def process = parseAndReturnProcess(text)
+        def in0 = (ValueInParam)process.config.getInputs().get(0)
+        def in1 = (SetInParam)process.config.getInputs().get(1)
+
+        then:
+        !in0.isNestedParam()
+        !in1.isNestedParam()
+        (in1.inner[0] as ValueInParam).isNestedParam()
+        (in1.inner[1] as FileInParam).isNestedParam()
+    }
+
 }
