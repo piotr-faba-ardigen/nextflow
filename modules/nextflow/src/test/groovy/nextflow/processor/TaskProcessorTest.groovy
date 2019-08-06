@@ -816,4 +816,16 @@ class TaskProcessorTest extends Specification {
         then:
         thrown(ProcessUnrecoverableException)
     }
+
+    def 'should normalize files' () {
+        given:
+        def proc = new TaskProcessor()
+
+        when:
+        def result = proc.normalizeInputToFiles('/some/path', 0, true)
+        then:
+        result.size() == 1
+        result[0] == new FileHolder(Paths.get('/some/path'))
+
+    }
 }

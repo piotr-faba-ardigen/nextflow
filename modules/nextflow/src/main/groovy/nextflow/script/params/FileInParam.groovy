@@ -31,7 +31,7 @@ class FileInParam extends BaseInParam implements PathQualifier {
 
     protected filePattern
 
-    protected boolean pathQualifier
+    private boolean pathQualifier
 
     @Override String getTypeName() { pathQualifier ? 'path' : 'file' }
 
@@ -116,5 +116,10 @@ class FileInParam extends BaseInParam implements PathQualifier {
 
     @Override
     boolean isPathQualifier() { pathQualifier }
+
+    @Override
+    FileInParam setOptions(Map<String,?> opts) {
+        (FileInParam)super.setOptions(opts)
+    }
 
 }

@@ -1539,7 +1539,8 @@ class TaskProcessor {
         }
 
         if( coerceToPath ) {
-            return new FileHolder(normalizeToPath(input))
+            final path = normalizeToPath(input)
+            return new FileHolder(path)
         }
 
         /*
