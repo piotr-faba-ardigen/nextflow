@@ -2,15 +2,15 @@
 nextflow.preview.dsl=2
 
 params.events = 'create'
-params.files = 'examples/data/*.fa'
+params.paths = 'examples/data/*.fa'
 
 
 process align {
   input:
-  file fasta
+  path fasta
 
   output:
-  file aln
+  path aln
 
   """
   t_coffee -in $fasta 1> aln

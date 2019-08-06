@@ -9,10 +9,10 @@ DB = file(params.db)
 
 process blast {
     input:
-    file 'seq.fa'
+    path 'seq.fa'
 
     output:
-    file 'out'
+    path 'out'
 
     """
     blastp -db $DB -query seq.fa -outfmt 6 > out
@@ -21,7 +21,7 @@ process blast {
 
 process sort {
     input:
-    file 'hits_*'
+    path 'hits_*'
 
     output:
     stdout()

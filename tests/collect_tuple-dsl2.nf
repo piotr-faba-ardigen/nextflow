@@ -12,7 +12,7 @@ process algn {
   each seq_id
 
   output:
-  set barcode, seq_id, file('bam'), file('bai')
+  set barcode, seq_id, path('bam'), path('bai')
 
   """
   echo BAM $seq_id - $barcode > bam

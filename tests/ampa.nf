@@ -33,7 +33,7 @@ process ampaTask {
     file seq
 
     output:
-    file result
+    file 'result'
 
     // The BASH script to be executed - for each - sequence
     """

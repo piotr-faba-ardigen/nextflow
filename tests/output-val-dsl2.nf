@@ -6,7 +6,7 @@ y = 200
 
 process foo {
   input:
-  file fastq
+  path fastq
 
   output:
   val 'Hello'

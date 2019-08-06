@@ -11,10 +11,10 @@ params.in = "$baseDir/data/sample.fa"
 process ampaTask {
 
     input:
-    file seq
+    path seq
 
     output:
-    file result
+    path 'result'
 
     // The BASH script to be executed - for each - sequence
     """
