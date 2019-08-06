@@ -24,13 +24,9 @@ import java.nio.file.LinkOption
 import java.nio.file.Path
 import java.nio.file.PathMatcher
 import java.util.concurrent.ExecutorService
-import java.util.concurrent.LinkedBlockingQueue
-import java.util.concurrent.ThreadPoolExecutor
-import java.util.concurrent.TimeUnit
 
 import groovy.transform.CompileStatic
 import groovy.transform.EqualsAndHashCode
-import groovy.transform.Memoized
 import groovy.transform.PackageScope
 import groovy.transform.ToString
 import groovy.util.logging.Slf4j
@@ -89,6 +85,9 @@ class PublishDir {
     private String stageInMode
 
     private boolean nullPathWarn
+
+    @Lazy
+    private ExecutorService threadPool = (Global.session as Session).getFileTransferThreadPool()
 
     void setPath( Closure obj ) {
         setPath( obj.call() as Path )
@@ -211,7 +210,7 @@ class PublishDir {
             safeProcessFile(source, destination)
         }
         else {
-            executor.submit({ safeProcessFile(source, destination) } as Runnable)
+            threadPool.submit({ safeProcessFile(source, destination) } as Runnable)
         }
 
     }
@@ -335,23 +334,5 @@ class PublishDir {
         }
     }
 
-    @Memoized // <-- this guarantees that the same executor is used across different publish dir in the same session
-    @CompileStatic
-    static synchronized ExecutorService createExecutor(Session session) {
-        final result = new ThreadPoolExecutor(0, Runtime.runtime.availableProcessors(),
-                60L, TimeUnit.SECONDS,
-                new LinkedBlockingQueue<Runnable>());
 
-        session?.onShutdown {
-            result.shutdown()
-            result.awaitTermination(36,TimeUnit.HOURS)
-        }
-
-        return result
-    }
-
-    @PackageScope
-    static ExecutorService getExecutor() {
-        createExecutor(Global.session as Session)
-    }
 }

@@ -2,7 +2,7 @@
 nextflow.preview.dsl=2
 
 params.events = 'create'
-params.paths = 'examples/data/*.fa'
+params.files = 'examples/data/*.fa'
 
 
 process align {

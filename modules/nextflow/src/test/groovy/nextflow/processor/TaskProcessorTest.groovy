@@ -28,13 +28,15 @@ import nextflow.ISession
 import nextflow.Session
 import nextflow.exception.ProcessException
 import nextflow.exception.ProcessUnrecoverableException
+import nextflow.executor.Executor
 import nextflow.executor.NopeExecutor
 import nextflow.file.FileHolder
+import nextflow.file.FilePorter
 import nextflow.script.BaseScript
-import nextflow.script.params.FileOutParam
 import nextflow.script.ProcessConfig
 import nextflow.script.ScriptType
 import nextflow.script.TaskBody
+import nextflow.script.params.FileOutParam
 import nextflow.util.ArrayBag
 import nextflow.util.CacheHelper
 import spock.lang.Specification
@@ -442,7 +444,7 @@ class TaskProcessorTest extends Specification {
          * simple return a reference to it in the holder object
          */
         when:
-        holder = processor.normalizeInputToFile(localFile,null, false)
+        holder = processor.normalizeInputToFile(localFile,null)
         then:
         holder.sourceObj == localFile
         holder.storePath == localFile.toRealPath()
@@ -453,22 +455,12 @@ class TaskProcessorTest extends Specification {
          * and save to the local file system
          */
         when:
-        holder = processor.normalizeInputToFile("text data string",'simple_file_name.txt',false)
+        holder = processor.normalizeInputToFile("text data string",'simple_file_name.txt')
         then:
         holder.sourceObj == "text data string"
         holder.storePath.fileSystem == FileSystems.default
         holder.storePath.text == "text data string"
         holder.stageName == 'simple_file_name.txt'
-
-        /*
-         * when coerce to path is true, the string value is converted to a path
-         */
-        when:
-        holder = processor.normalizeInputToFile("/some/file.txt",'simple_file_name.txt',true)
-        then:
-        holder.sourceObj == '/some/file.txt' as Path
-        holder.storePath == '/some/file.txt' as Path
-        holder.stageName == 'file.txt'
 
         cleanup:
         tempFolder?.deleteDir()
@@ -805,6 +797,8 @@ class TaskProcessorTest extends Specification {
         proc.normalizeToPath('/foo/bar') == '/foo/bar' as Path
         and:
         proc.normalizeToPath('file:///foo/bar') == '/foo/bar' as Path
+        and:
+        proc.normalizeToPath(Paths.get('foo.txt')) == Paths.get('foo.txt')
 
         when:
         proc.normalizeToPath('abc')
@@ -820,12 +814,28 @@ class TaskProcessorTest extends Specification {
     def 'should normalize files' () {
         given:
         def proc = new TaskProcessor()
+        def batch = Mock(FilePorter.Batch)
+        def PATH = Paths.get('/some/path')
 
         when:
-        def result = proc.normalizeInputToFiles('/some/path', 0, true)
+        def result = proc.normalizeInputToFiles(PATH.toString(), 0, true, batch)
         then:
+        1 * batch.addToForeign(PATH) >> PATH
         result.size() == 1
-        result[0] == new FileHolder(Paths.get('/some/path'))
+        result[0] == new FileHolder(PATH)
 
     }
+
+
+    def 'should return stage dir' () {
+        given:
+        def WORK_DIR = Paths.get('/the/work/dir')
+        def processor = new TaskProcessor()
+        processor.executor = Mock(Executor) { getWorkDir() >> WORK_DIR }
+
+        expect:
+        processor.getStageDir() == WORK_DIR.resolve('stage')
+    }
+
+
 }

@@ -16,6 +16,8 @@
 
 package nextflow
 
+import static nextflow.Const.*
+
 import java.lang.reflect.Method
 import java.nio.file.Files
 import java.nio.file.Path
@@ -23,6 +25,8 @@ import java.nio.file.Paths
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.TimeUnit
 
 import com.google.common.hash.HashCode
 import com.upplication.s3fs.S3OutputStream
@@ -66,13 +70,13 @@ import nextflow.trace.TraceRecord
 import nextflow.trace.WebLogObserver
 import nextflow.trace.WorkflowStats
 import nextflow.util.Barrier
+import nextflow.util.BlockingThreadExecutorFactory
 import nextflow.util.ConfigHelper
 import nextflow.util.Duration
 import nextflow.util.HistoryFile
 import nextflow.util.NameGenerator
 import sun.misc.Signal
 import sun.misc.SignalHandler
-import static nextflow.Const.S3_UPLOADER_CLASS
 /**
  * Holds the information on the current execution
  *
@@ -606,7 +610,7 @@ class Session implements ISession {
     }
 
     protected Map<String,Path> findBinEntries(Path path) {
-        def result = new HashMap<String,Path>()
+        def result = new LinkedHashMap(10)
         path
                 .listFiles { file -> Files.isExecutable(file) }
                 .each { Path file -> result.put(file.name,file)  }
@@ -1220,7 +1224,7 @@ class Session implements ISession {
      * @return The value of tasks to handle in parallel
      */
     @Memoized
-    public int getQueueSize( String execName, int defValue ) {
+    int getQueueSize( String execName, int defValue ) {
         getExecConfigProp(execName, 'queueSize', defValue) as int
     }
 
@@ -1232,7 +1236,7 @@ class Session implements ISession {
      * @return A {@code Duration} object. Default '1 second'
      */
     @Memoized
-    public Duration getPollInterval( String execName, Duration defValue = Duration.of('1sec') ) {
+    Duration getPollInterval( String execName, Duration defValue = Duration.of('1sec') ) {
         getExecConfigProp( execName, 'pollInterval', defValue ) as Duration
     }
 
@@ -1245,7 +1249,7 @@ class Session implements ISession {
      * @return A {@code Duration} object. Default '90 second'
      */
     @Memoized
-    public Duration getExitReadTimeout( String execName, Duration defValue = Duration.of('90sec') ) {
+    Duration getExitReadTimeout( String execName, Duration defValue = Duration.of('90sec') ) {
         getExecConfigProp( execName, 'exitReadTimeout', defValue ) as Duration
     }
 
@@ -1269,7 +1273,7 @@ class Session implements ISession {
      * @return A {@code Duration} object. Default '1 minute'
      */
     @Memoized
-    public Duration getQueueStatInterval( String execName, Duration defValue = Duration.of('1min') ) {
+    Duration getQueueStatInterval( String execName, Duration defValue = Duration.of('1min') ) {
         getExecConfigProp(execName, 'queueStatInterval', defValue) as Duration
     }
 
@@ -1299,4 +1303,47 @@ class Session implements ISession {
         ansiLogObserver ? ansiLogObserver.appendInfo(file.text) : Files.copy(file, System.out)
     }
 
+    @Memoized // <-- this guarantees that the same executor is used across different publish dir in the same session
+    @CompileStatic
+    synchronized ExecutorService getFileTransferThreadPool() {
+        final factory = new BlockingThreadExecutorFactory()
+                .withName('FileTransfer')
+                .withMaxThreads( Runtime.runtime.availableProcessors()*3 )
+        final pool = factory.create()
+
+        this.onShutdown {
+            final max = factory.maxAwait.millis
+            final t0 = System.currentTimeMillis()
+            // start shutdown process
+            pool.shutdown()
+            // wait for ongoing file transfer to complete
+            int count=0
+            while( true ) {
+                final terminated = pool.awaitTermination(5, TimeUnit.SECONDS)
+                if( terminated )
+                    break
+                
+                final delta = System.currentTimeMillis()-t0
+                if( delta > max ) {
+                    log.warn "Exiting before FileTransfer thread pool complete -- Some files maybe lost"
+                    break
+                }
+
+                final p1 = ((ThreadPoolExecutor)pool)
+                final pending = p1.getTaskCount() - p1.getCompletedTaskCount()
+                // log to console every 10 minutes (120 * 5 sec)
+                if( count % 120 == 0 ) {
+                    log.info1 "Waiting files transfer to complete (${pending} files)"
+                }
+                // log to the debug file every minute (12 * 5 sec)
+                else if( count % 12 == 0 ) {
+                    log.debug "Waiting files transfer to complete (${pending} files)"
+                }
+                // increment the count
+                count++
+            }
+        }
+
+        return pool
+    }
 }

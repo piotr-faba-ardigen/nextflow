@@ -40,7 +40,7 @@ process reverse {
     """
 }
 
-Channel.value(file(params.in)) |
+Channel.value(params.in) |
         splitSequences |
         reverse |
         subscribe { println it }

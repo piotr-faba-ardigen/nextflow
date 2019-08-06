@@ -64,6 +64,7 @@ import nextflow.extension.DataflowHelper
 import nextflow.file.FileHelper
 import nextflow.file.FileHolder
 import nextflow.file.FilePatternSplitter
+import nextflow.file.FilePorter
 import nextflow.script.BaseScript
 import nextflow.script.ProcessConfig
 import nextflow.script.ScriptType
@@ -1529,18 +1530,13 @@ class TaskProcessor {
      * @param altName The name to be used when a temporary file is created.
      * @return The {@code Path} that will be staged in the task working folder
      */
-    protected FileHolder normalizeInputToFile( Object input, String altName, boolean coerceToPath ) {
+    protected FileHolder normalizeInputToFile( Object input, String altName ) {
 
         /*
          * when it is a local file, just return a reference holder to it
          */
         if( input instanceof Path ) {
             return new FileHolder(input)
-        }
-
-        if( coerceToPath ) {
-            final path = normalizeToPath(input)
-            return new FileHolder(path)
         }
 
         /*
@@ -1554,9 +1550,12 @@ class TaskProcessor {
     }
 
     protected Path normalizeToPath( obj ) {
+        if( obj instanceof Path )
+            return obj
+
         if( obj == null )
             throw new ProcessUnrecoverableException("Path value cannot be null")
-
+        
         if( !(obj instanceof CharSequence) )
             throw new ProcessUnrecoverableException("Not a valid path value type: ${obj.getClass().getName()} ($obj)")
 
@@ -1571,7 +1570,7 @@ class TaskProcessor {
         throw new ProcessUnrecoverableException("Not a valid path value: $str")
     }
 
-    protected List<FileHolder> normalizeInputToFiles( Object obj, int count, boolean coerceToPath ) {
+    protected List<FileHolder> normalizeInputToFiles( Object obj, int count, boolean coerceToPath, FilePorter.Batch batch ) {
 
         Collection allItems = obj instanceof Collection ? obj : [obj]
         def len = allItems.size()
@@ -1579,7 +1578,16 @@ class TaskProcessor {
         // use a bag so that cache hash key is not affected by file entries order
         def files = new ArrayBag<FileHolder>(len)
         for( def item : allItems ) {
-            files << normalizeInputToFile(item, "input.${++count}", coerceToPath)
+
+            if( item instanceof Path || coerceToPath ) {
+                def path = normalizeToPath(item)
+                def target = batch.addToForeign(path)
+                def holder = new FileHolder(target)
+                files << holder
+            }
+            else {
+                files << normalizeInputToFile(item, "input.${++count}")
+            }
         }
 
         return files
@@ -1773,18 +1781,26 @@ class TaskProcessor {
         return count
     }
 
+    protected Path getStageDir() {
+        return executor.getWorkDir().resolve('stage')
+    }
+
+
     final protected void makeTaskContextStage2( TaskRun task, Map secondPass, int count ) {
 
         final ctx = task.context
         final allNames = new HashMap<String,Integer>()
 
+        final FilePorter.Batch batch = session.filePorter.newBatch(getStageDir())
+
         // -- all file parameters are processed in a second pass
         //    so that we can use resolve the variables that eventually are in the file name
-        for( Map.Entry<FileInParam,?> entry : secondPass) {
-            def param = entry.key
-            def val = entry.value
-            def normalized = normalizeInputToFiles(val, count, param.isPathQualifier())
-            def resolved = expandWildcards( param.getFilePattern(ctx), normalized )
+        for( Map.Entry<FileInParam,?> entry : secondPass.entrySet() ) {
+            final param = entry.getKey()
+            final val = entry.getValue()
+            final fileParam = param as FileInParam
+            final normalized = normalizeInputToFiles(val, count, fileParam.isPathQualifier(), batch)
+            final resolved = expandWildcards( fileParam.getFilePattern(ctx), normalized )
             ctx.put( param.name, singleItemOrList(resolved, task.type) )
             count += resolved.size()
             for( FileHolder item : resolved ) {
@@ -1807,6 +1823,9 @@ class TaskProcessor {
             def message = "Process `$name` input file name collision -- There are multiple input files for each of the following file names: ${conflicts.keySet().join(', ')}"
             throw new ProcessUnrecoverableException(message)
         }
+
+        // -- download foreign files
+        session.filePorter.transfer(batch)
     }
 
     final protected void makeTaskContextStage3( TaskRun task, HashCode hash, Path folder ) {

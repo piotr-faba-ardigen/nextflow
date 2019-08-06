@@ -53,7 +53,7 @@ process align {
  * main flow
  */
 Channel.fromPath(params.query) |
-        splitFasta(by: params.chunk) |
+        splitFasta(by: params.chunk, file:true) |
         blast |
         extract |
         collectFile(name:'all_seq') |  // Collect all hits to a single file called  'all_seq'

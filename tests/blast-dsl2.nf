@@ -32,7 +32,7 @@ process sort {
 }
 
 Channel.fromPath(params.query) |
-        splitFasta( by: params.chunkSize ) |
+        splitFasta( by: params.chunkSize, file:true ) |
         blast |
         collect |
         sort |
