@@ -85,7 +85,7 @@ class Channel  {
      */
     static DataflowChannel empty() {
         final result = new DataflowQueue()
-        result.bind(STOP)
+        CH.bind(result, Channel.STOP)
         NodeMarker.addSourceNode('Channel.empty', result)
         return result
     }

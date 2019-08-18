@@ -72,4 +72,25 @@ class ConcatOp2Test extends Dsl2Spec {
         result.val == Channel.STOP
     }
 
+    def 'should concat with empty'() {
+        when:
+        def result = dsl_eval('''
+            ch1 = Channel.value(1)
+            ch2 = Channel.empty()
+            ch1.concat(ch2)        
+        ''')
+        then:
+        result.val == 1
+        result.val == Channel.STOP
+        
+        when:
+        result = dsl_eval('''
+            ch1 = Channel.empty()
+            ch2 = Channel.empty()
+            ch1.concat(ch2)        
+        ''')
+        then:
+        result.val == Channel.STOP
+    }
+
 }
