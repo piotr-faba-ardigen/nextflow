@@ -28,7 +28,6 @@ import nextflow.exception.ScriptRuntimeException
 import nextflow.extension.CH
 import nextflow.script.ProcessConfig
 import nextflow.script.TokenVar
-
 /**
  * Model a process generic input parameter
  *
@@ -84,7 +83,9 @@ abstract class BaseInParam extends BaseParam implements InParam {
         }
 
         if( NF.isDsl2() ) {
-            return CH.value(value)
+            final result = new DataflowVariable()
+            result.bind(value)
+            return result
         }
 
         // wrap any collections with a DataflowQueue

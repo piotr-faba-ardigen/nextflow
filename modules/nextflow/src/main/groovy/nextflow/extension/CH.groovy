@@ -129,7 +129,8 @@ class CH {
 
     static bind(DataflowWriteChannel channel, Object value) {
         if(NF.isDsl2()) {
-            session().addIgniter { channel.bind(value) }
+            log.debug "Add igniter ch=$channel - value=$value"
+            session().addIgniter {  log.debug "Deferred bind - ch=$channel - value=$value"; channel.bind(value) }
         }
         else {
             channel.bind(value)

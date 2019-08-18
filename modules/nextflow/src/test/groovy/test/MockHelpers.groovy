@@ -1,6 +1,9 @@
 package test
 
 import java.nio.file.Paths
+import java.util.concurrent.BlockingQueue
+import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.TimeUnit
 
 import groovy.util.logging.Slf4j
 import groovyx.gpars.dataflow.DataflowBroadcast
@@ -103,19 +106,54 @@ class MockExecutor extends Executor {
     void signal() { }
 
     protected TaskMonitor createTaskMonitor() {
-        new MockMonitor()
+        new MockMonitor(session: session)
     }
 
     @Override
     TaskHandler createTaskHandler(TaskRun task) {
-        return new  MockTaskHandler(task)
+        return new MockTaskHandler(task)
     }
 }
 
+@Slf4j
 class MockMonitor implements TaskMonitor {
 
+    private Session session
+    private BlockingQueue<TaskHandler> queue = new LinkedBlockingQueue()
+
+    /**
+     * Start the monitoring activity for the queued tasks
+     * @return The instance itself, useful to chain methods invocation
+     */
+    @Override
+    TaskMonitor start() {
+        log.debug ">>> barrier register (monitor: ${this})"
+        session.barrier.register(this)
+        Thread.startDaemon('MockSubmitterThread') {
+            executeTasks()
+        }
+        return this
+    }
+
+    protected void executeTasks() {
+        try {
+            while( true ) {
+                if( session.isTerminated() || session.isAborted() )
+                    break
+                TaskHandler t = queue.poll(100, TimeUnit.MILLISECONDS)
+                t?.submit()
+            }
+        }
+        finally {
+            log.debug "Tasks queue = $queue"
+            log.debug "<<< barrier arrives (monitor: ${this})"
+            session.barrier.arrive(this)
+        }
+    }
+
     void schedule(TaskHandler handler) {
-        handler.submit()
+        log.debug "Task received = $handler"
+        queue.add(handler)
     }
 
     /**
@@ -123,13 +161,9 @@ class MockMonitor implements TaskMonitor {
      *
      * @param handler A not null {@code TaskHandler} instance
      */
-    boolean evict(TaskHandler handler) { }
-
-    /**
-     * Start the monitoring activity for the queued tasks
-     * @return The instance itself, useful to chain methods invocation
-     */
-    TaskMonitor start() { }
+    boolean evict(TaskHandler handler) {
+        return true
+    }
 
     /**
      * Notify when a task terminates

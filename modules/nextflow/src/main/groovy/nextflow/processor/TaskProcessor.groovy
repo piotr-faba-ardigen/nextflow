@@ -15,6 +15,7 @@
  */
 package nextflow.processor
 
+import nextflow.NF
 import static nextflow.processor.ErrorStrategy.*
 
 import java.nio.file.LinkOption
@@ -362,7 +363,7 @@ class TaskProcessor {
         state = new Agent<>(new StateObj(name))
         state.addListener { StateObj old, StateObj obj ->
             try {
-                log.trace "<$name> Process state changed to: $obj -- finished: ${obj.isFinished()}"
+                log.debug "<$name> Process state changed to: $obj -- finished: ${obj.isFinished()}"
                 if( !completed && obj.isFinished() ) {
                     terminateProcess()
                     completed = true
@@ -440,12 +441,13 @@ class TaskProcessor {
             final forwarder = new ForwardClosure(size, iteratorIndexes)
 
             // instantiate the iteration process
+            def DataflowOperator op1
             def stopAfterFirstRun = allScalarValues
             def interceptor = new BaseProcessInterceptor(opInputs, stopAfterFirstRun)
             def params = [inputs: opInputs, outputs: linkingChannels, maxForks: 1, listeners: [interceptor]]
-            session.allOperators << (operator = new DataflowOperator(group, params, forwarder))
+            session.allOperators << (op1 = new DataflowOperator(group, params, forwarder))
             // fix issue #41
-            operator.start()
+            start(op1)
 
             // set as next inputs the result channels of the iteration process
             // adding the 'control' channel removed previously
@@ -484,8 +486,17 @@ class TaskProcessor {
         NodeMarker.addProcessNode(this, config.getInputs(), config.getOutputs())
 
         // fix issue #41
-        operator.start()
+        start(operator)
 
+    }
+
+    private start(DataflowProcessor op) {
+        if(NF.dsl2) {
+            session.addIgniter { op.start() }
+        }
+        else {
+            op.start()
+        }
     }
 
     private AtomicIntegerArray createPortsArray(int size) {
@@ -2062,7 +2073,7 @@ class TaskProcessor {
      * @param producedFiles The map of files to be bind the outputs
      */
     private void finalizeTask0( TaskRun task ) {
-        log.trace "Finalize process > ${task.name}"
+        log.debug "Finalize process > ${task.name}"
 
         // -- bind output (files)
         if( task.canBind ) {
@@ -2140,6 +2151,7 @@ class TaskProcessor {
         Object messageArrived(final DataflowProcessor processor, final DataflowReadChannel<Object> channel, final int index, final Object message) {
             if( len == 1 || stopAfterFirstRun ) {
                 // -- kill itself
+                log.debug "Kill itself"
                 control.bind(PoisonPill.instance)
             }
             else if( index == first ) {
@@ -2164,7 +2176,7 @@ class TaskProcessor {
 
         @Override
         List<Object> beforeRun(final DataflowProcessor processor, final List<Object> messages) {
-            log.trace "<${name}> Before run -- messages: ${messages}"
+            log.debug "<${name}> Before run -- messages: ${messages}"
             // the counter must be incremented here, otherwise it won't be consistent
             state.update { StateObj it -> it.incSubmitted() }
             return messages;
@@ -2173,33 +2185,33 @@ class TaskProcessor {
 
         @Override
         void afterRun(DataflowProcessor processor, List<Object> messages) {
-            log.trace "<${name}> After run"
+            log.debug "<${name}> After run"
             currentTask.remove()
         }
 
         @Override
         Object messageArrived(final DataflowProcessor processor, final DataflowReadChannel<Object> channel, final int index, final Object message) {
-            if( log.isTraceEnabled() ) {
+//            if( log.isTraceEnabled() ) {
                 def channelName = config.getInputs()?.names?.get(index)
                 def taskName = currentTask.get()?.name ?: name
-                log.trace "<${taskName}> Message arrived -- ${channelName} => ${message}"
-            }
+                log.debug "<${taskName}> Message arrived -- ${channelName} => ${message}"
+//            }
 
             super.messageArrived(processor, channel, index, message)
         }
 
         @Override
         Object controlMessageArrived(final DataflowProcessor processor, final DataflowReadChannel<Object> channel, final int index, final Object message) {
-            if( log.isTraceEnabled() ) {
+//            if( log.isTraceEnabled() ) {
                 def channelName = config.getInputs()?.names?.get(index)
                 def taskName = currentTask.get()?.name ?: name
-                log.trace "<${taskName}> Control message arrived ${channelName} => ${message}"
-            }
+                log.debug "<${taskName}> Control message arrived ${channelName} => ${message}"
+//            }
 
             super.controlMessageArrived(processor, channel, index, message)
 
             if( message == PoisonPill.instance ) {
-                log.trace "<${name}> Poison pill arrived; port: $index"
+                log.debug "<${name}> Poison pill arrived; port: $index"
                 openPorts.set(index, 0) // mark the port as closed
                 state.update { StateObj it -> it.poison() }
             }
@@ -2209,7 +2221,7 @@ class TaskProcessor {
 
         @Override
         void afterStop(final DataflowProcessor processor) {
-            log.trace "<${name}> After stop"
+            log.debug "<${name}> After stop"
         }
 
         /**

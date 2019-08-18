@@ -17,8 +17,9 @@
 package nextflow.script.params
 
 
-import nextflow.extension.CH
+import groovyx.gpars.dataflow.DataflowQueue
 import nextflow.script.ProcessConfig
+
 /**
  * Model a process default input parameter
  *
@@ -31,7 +32,7 @@ final class DefaultInParam extends ValueInParam {
 
     DefaultInParam(ProcessConfig config) {
         super(config)
-        final channel = CH.queue(); CH.bind(channel, Boolean.TRUE)
+        final channel = new DataflowQueue(); channel.bind(Boolean.TRUE)
         setFrom(channel)
         bind('$')
     }
