@@ -15,7 +15,6 @@ import nextflow.Channel
 import nextflow.Global
 import nextflow.NF
 import nextflow.Session
-
 import static nextflow.Channel.STOP
 
 /**
@@ -153,8 +152,10 @@ class CH {
 
     static DataflowQueue queue(Collection items, boolean close=false) {
         final result = new DataflowQueue()
-        if( close )
-            items = new ArrayList(items); items.add(STOP)
+        if( close ) {
+            items = new ArrayList(items);
+            items.add(STOP)
+        }
         emit(result, items)
         return result
     }

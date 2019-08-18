@@ -8,6 +8,7 @@ import groovyx.gpars.dataflow.DataflowBroadcast
 import groovyx.gpars.dataflow.DataflowQueue
 import groovyx.gpars.dataflow.DataflowReadChannel
 import groovyx.gpars.dataflow.DataflowVariable
+import nextflow.Channel
 import nextflow.NextflowMeta
 /**
  *
@@ -106,6 +107,39 @@ class CHTest extends Specification {
         and:
         // no stop is emitted
         ch.getVal(500, TimeUnit.MILLISECONDS) == null
+    }
+
+    def 'should create dataflow empty queue' () {
+        when:
+        def ch = CH.queue()
+        then:
+        ch instanceof DataflowQueue
+        and:
+        ch.getVal(200, TimeUnit.MILLISECONDS) == null
+    }
+
+    def 'should create dataflow queue w/o stop' () {
+        when:
+        def ch = CH.queue([1,2,3])
+        then:
+        ch instanceof DataflowQueue
+        ch.val == 1
+        ch.val == 2
+        ch.val == 3
+        and:
+        ch.getVal(200, TimeUnit.MILLISECONDS) == null
+    }
+
+    def 'should create dataflow queue with stop' () {
+        when:
+        def ch = CH.queue([1,2,3], true)
+        then:
+        ch instanceof DataflowQueue
+        ch.val == 1
+        ch.val == 2
+        ch.val == 3
+        and:
+        ch.val == Channel.STOP
     }
 
 }
