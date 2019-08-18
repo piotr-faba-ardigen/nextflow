@@ -363,7 +363,7 @@ class TaskProcessor {
         state = new Agent<>(new StateObj(name))
         state.addListener { StateObj old, StateObj obj ->
             try {
-                log.debug "<$name> Process state changed to: $obj -- finished: ${obj.isFinished()}"
+                log.trace "<$name> Process state changed to: $obj -- finished: ${obj.isFinished()}"
                 if( !completed && obj.isFinished() ) {
                     terminateProcess()
                     completed = true
@@ -2073,7 +2073,7 @@ class TaskProcessor {
      * @param producedFiles The map of files to be bind the outputs
      */
     private void finalizeTask0( TaskRun task ) {
-        log.debug "Finalize process > ${task.name}"
+        log.trace "Finalize process > ${task.name}"
 
         // -- bind output (files)
         if( task.canBind ) {
@@ -2151,7 +2151,6 @@ class TaskProcessor {
         Object messageArrived(final DataflowProcessor processor, final DataflowReadChannel<Object> channel, final int index, final Object message) {
             if( len == 1 || stopAfterFirstRun ) {
                 // -- kill itself
-                log.debug "Kill itself"
                 control.bind(PoisonPill.instance)
             }
             else if( index == first ) {
@@ -2176,7 +2175,7 @@ class TaskProcessor {
 
         @Override
         List<Object> beforeRun(final DataflowProcessor processor, final List<Object> messages) {
-            log.debug "<${name}> Before run -- messages: ${messages}"
+            log.trace "<${name}> Before run -- messages: ${messages}"
             // the counter must be incremented here, otherwise it won't be consistent
             state.update { StateObj it -> it.incSubmitted() }
             return messages;
@@ -2185,33 +2184,33 @@ class TaskProcessor {
 
         @Override
         void afterRun(DataflowProcessor processor, List<Object> messages) {
-            log.debug "<${name}> After run"
+            log.trace "<${name}> After run"
             currentTask.remove()
         }
 
         @Override
         Object messageArrived(final DataflowProcessor processor, final DataflowReadChannel<Object> channel, final int index, final Object message) {
-//            if( log.isTraceEnabled() ) {
+            if( log.isTraceEnabled() ) {
                 def channelName = config.getInputs()?.names?.get(index)
                 def taskName = currentTask.get()?.name ?: name
-                log.debug "<${taskName}> Message arrived -- ${channelName} => ${message}"
-//            }
+                log.trace "<${taskName}> Message arrived -- ${channelName} => ${message}"
+            }
 
             super.messageArrived(processor, channel, index, message)
         }
 
         @Override
         Object controlMessageArrived(final DataflowProcessor processor, final DataflowReadChannel<Object> channel, final int index, final Object message) {
-//            if( log.isTraceEnabled() ) {
+            if( log.isTraceEnabled() ) {
                 def channelName = config.getInputs()?.names?.get(index)
                 def taskName = currentTask.get()?.name ?: name
-                log.debug "<${taskName}> Control message arrived ${channelName} => ${message}"
-//            }
+                log.trace "<${taskName}> Control message arrived ${channelName} => ${message}"
+            }
 
             super.controlMessageArrived(processor, channel, index, message)
 
             if( message == PoisonPill.instance ) {
-                log.debug "<${name}> Poison pill arrived; port: $index"
+                log.trace "<${name}> Poison pill arrived; port: $index"
                 openPorts.set(index, 0) // mark the port as closed
                 state.update { StateObj it -> it.poison() }
             }
@@ -2221,7 +2220,7 @@ class TaskProcessor {
 
         @Override
         void afterStop(final DataflowProcessor processor) {
-            log.debug "<${name}> After stop"
+            log.trace "<${name}> After stop"
         }
 
         /**
