@@ -16,13 +16,10 @@
 
 package nextflow.extension
 
-import static nextflow.util.LoggerHelper.*
-
 import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import groovyx.gpars.agent.Agent
-import groovyx.gpars.dataflow.DataflowQueue
 import groovyx.gpars.dataflow.DataflowWriteChannel
 import nextflow.Channel
 import nextflow.NF
@@ -34,6 +31,8 @@ import nextflow.script.ComponentDef
 import nextflow.script.CompositeDef
 import nextflow.script.ExecutionStack
 import org.codehaus.groovy.runtime.InvokerHelper
+import static nextflow.util.LoggerHelper.fmtType
+
 /**
  * Implements dataflow channel extension methods
  *
@@ -79,11 +78,7 @@ class ChannelEx {
      * @return
      */
     static DataflowWriteChannel channel(Collection values) {
-        final target = new DataflowQueue()
-        final itr = values.iterator()
-        while( itr.hasNext() )
-            target.bind(itr.next())
-        target.bind(Channel.STOP)
+        final target = CH.emitAndClose(CH.queue(), values)
         NodeMarker.addSourceNode('channel',target)
         return target
     }
@@ -97,7 +92,6 @@ class ChannelEx {
     static DataflowWriteChannel close(DataflowWriteChannel source) {
         if( NF.isDsl2() )
             throw new DeprecationException("Channel `close` method is not supported any more")
-        log.warn "The `close` operator is deprecated -- it will be removed in a future release"
         return CH.close0(source)
     }
 

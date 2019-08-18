@@ -73,9 +73,9 @@ class Channel  {
      */
     @Deprecated
     static DataflowChannel create() {
-        if( NF.isDsl2() )
-            log.warn("The channel `create` method is deprecated -- it will be removed in a future release")
-        new DataflowQueue()
+        if( NF.dsl2 )
+            throw new DeprecationException("Channel `create` method is not supported any more")
+        return CH.queue()
     }
 
     /**
@@ -83,9 +83,8 @@ class Channel  {
      *
      * @return The channel instance
      */
-    static DataflowChannel empty() {
-        final result = new DataflowQueue()
-        CH.bind(result, Channel.STOP)
+    static DataflowWriteChannel empty() {
+        final result = CH.emit(CH.queue(), STOP)
         NodeMarker.addSourceNode('Channel.empty', result)
         return result
     }
@@ -104,24 +103,9 @@ class Channel  {
 
     static private DataflowWriteChannel from0( Collection items ) {
         final result = CH.create()
-        if( NF.isDsl2() ) {
-            session.addIgniter { bindValues0(items, result) }
-        }
-        else {
-            bindValues0(items, result)
-        }
+        if( items != null )
+            CH.emitAndClose(result, items)
         return result
-    }
-
-    static private void bindValues0(Collection values, DataflowWriteChannel result) {
-        if ( values != null )  {
-            // bind all the items in the provided collection
-            for( def item : values ) {
-                result.bind(item)
-            }
-            // bind a stop signal to 'terminate' the result
-            result.bind(Channel.STOP)
-        }
     }
 
     /**
@@ -144,18 +128,13 @@ class Channel  {
      */
     @Deprecated
     static DataflowVariable just( obj = null ) {
+        if( NF.dsl2 ) throw new DeprecationException("The operator `just` is not available anymore -- Use `value` instead.")
         log.warn "The operator `just` is deprecated -- Use `value` instead."
-        def result = new DataflowVariable()
-        if( obj != null ) result.bind(obj)
-        return result
+        value(obj)
     }
 
     static DataflowVariable value( obj = null ) {
-        def result = new DataflowVariable()
-        if( obj != null ) {
-            CH.bind(result, obj)
-        }
-        return result
+        obj != null ? CH.value(obj) : CH.value()
     }
 
     /**

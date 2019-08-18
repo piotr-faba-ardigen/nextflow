@@ -104,12 +104,6 @@ class CH {
         return new DataflowQueue()
     }
 
-    static DataflowWriteChannel create(Collection items) {
-        def ret = create()
-        emit(ret, items)
-        return ret
-    }
-
     static boolean isChannel(obj) {
         obj instanceof DataflowReadChannel || obj instanceof DataflowWriteChannel
     }
@@ -127,23 +121,13 @@ class CH {
         return true
     }
 
-    static bind(DataflowWriteChannel channel, Object value) {
-        if(NF.isDsl2()) {
-            log.debug "Add igniter ch=$channel - value=$value"
-            session().addIgniter {  log.debug "Deferred bind - ch=$channel - value=$value"; channel.bind(value) }
-        }
-        else {
-            channel.bind(value)
-        }
-    }
-
     static DataflowVariable value() {
         return new DataflowVariable()
     }
 
     static DataflowVariable value(obj) {
         final result = new DataflowVariable()
-        bind(result, obj)
+        emit(result, obj)
         return result
     }
 
@@ -151,22 +135,30 @@ class CH {
         new DataflowQueue()
     }
 
-    static DataflowQueue queue(Collection items, boolean close=false) {
-        final result = new DataflowQueue()
-        if( close ) {
-            items = new ArrayList(items);
-            items.add(STOP)
+
+    static DataflowWriteChannel emit(DataflowWriteChannel ch, Object value) {
+        if(NF.isDsl2()) {
+            session().addIgniter { ch.bind(value) }
         }
-        emit(result, items)
-        return result
+        else {
+            ch.bind(value)
+        }
+        return ch
     }
 
-    static void emit(DataflowWriteChannel ch, Collection items) {
+    static <T extends DataflowWriteChannel> T emitValues(T ch, Collection items) {
         if(NF.dsl2) {
             session().addIgniter {-> for( def it : items ) ch.bind(it) }
         }
         else {
             for( def it : items ) ch.bind(it)
         }
+        return ch
+    }
+
+    static <T extends DataflowWriteChannel> T emitAndClose(T ch, Collection items) {
+        def values = new ArrayList(items);
+        values.add(STOP)
+        emitValues(ch, values)
     }
 }

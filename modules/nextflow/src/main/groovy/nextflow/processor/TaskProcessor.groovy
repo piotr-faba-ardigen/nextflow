@@ -487,14 +487,15 @@ class TaskProcessor {
 
         // fix issue #41
         start(operator)
-
     }
 
     private start(DataflowProcessor op) {
-        if(NF.dsl2) {
-            session.addIgniter { op.start() }
+        if( !NF.dsl2 ) {
+            op.start()
+            return
         }
-        else {
+        session.addIgniter {
+            log.debug "Starting process > $name"
             op.start()
         }
     }
@@ -505,7 +506,6 @@ class TaskProcessor {
             result.set(i, 1)
         return result
     }
-
 
     /**
      * The processor execution body

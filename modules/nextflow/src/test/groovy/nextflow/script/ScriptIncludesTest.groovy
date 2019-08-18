@@ -732,40 +732,41 @@ class ScriptIncludesTest extends Dsl2Spec {
                 input: file "foo"
                 output: stdout()
                 shell:
-                "rev foo"
+                "cmd consumer 1"
             }
             
             process another_consumer {
                 input: file "foo"
                 output: stdout()
-                shell: "wc -w foo"
+                shell: "cmd consumer 2"
             }
             
             workflow flow1 {
-                producer | consumer | view
+                emit: producer | consumer | map { it.toUpperCase() }
             }
             
             workflow flow2 {
-                producer | another_consumer | view
+                emit: producer | another_consumer | map { it.toUpperCase() }
             }
             '''.stripIndent()
 
-        SCRIPT.text = """
+        when:
+        def result = dsl_eval("""
             include "$MODULE" 
   
             workflow { 
               flow1()
               flow2()
+              emit: 
+              flow1.out
+              flow2.out
             }
 
-            """
-
-        when:
-        def runner = new MockScriptRunner()
-        def result = runner.setScript(SCRIPT).execute()
+            """)
 
         then:
-       true
+        result[0].val == 'CMD CONSUMER 1'
+        result[1].val == 'CMD CONSUMER 2'
 
     }
 }

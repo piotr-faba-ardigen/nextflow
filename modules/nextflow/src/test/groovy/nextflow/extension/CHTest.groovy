@@ -6,7 +6,6 @@ import java.util.concurrent.TimeUnit
 
 import groovyx.gpars.dataflow.DataflowBroadcast
 import groovyx.gpars.dataflow.DataflowQueue
-import groovyx.gpars.dataflow.DataflowReadChannel
 import groovyx.gpars.dataflow.DataflowVariable
 import nextflow.Channel
 import nextflow.NextflowMeta
@@ -78,7 +77,7 @@ class CHTest extends Specification {
         given:
         def ch = new DataflowQueue()
         when:
-        CH.bind(ch, 'hello')
+        CH.emit(ch, 'hello')
         then:
         ch.val == 'hello'
     }
@@ -87,7 +86,7 @@ class CHTest extends Specification {
         given:
         def ch = new DataflowQueue()
         when:
-        CH.emit(ch, [1,2,3])
+        CH.emitValues(ch, [1, 2, 3])
         then:
         ch.val == 1
         ch.val == 2
@@ -97,17 +96,6 @@ class CHTest extends Specification {
         ch.getVal(500, TimeUnit.MILLISECONDS) == null
     }
 
-    def 'should create with values' () {
-        when:
-        def ch = (DataflowReadChannel)CH.create([1, 2, 3])
-        then:
-        ch.val == 1
-        ch.val == 2
-        ch.val == 3
-        and:
-        // no stop is emitted
-        ch.getVal(500, TimeUnit.MILLISECONDS) == null
-    }
 
     def 'should create dataflow empty queue' () {
         when:
@@ -120,7 +108,7 @@ class CHTest extends Specification {
 
     def 'should create dataflow queue w/o stop' () {
         when:
-        def ch = CH.queue([1,2,3])
+        def ch = CH.emitValues(CH.queue(), [1,2,3])
         then:
         ch instanceof DataflowQueue
         ch.val == 1
@@ -132,7 +120,7 @@ class CHTest extends Specification {
 
     def 'should create dataflow queue with stop' () {
         when:
-        def ch = CH.queue([1,2,3], true)
+        def ch = CH.emitAndClose(CH.queue(), [1,2,3])
         then:
         ch instanceof DataflowQueue
         ch.val == 1
