@@ -84,9 +84,7 @@ abstract class BaseInParam extends BaseParam implements InParam {
         }
 
         if( NF.isDsl2() ) {
-            final result = new DataflowVariable()
-            result.bind(value)
-            return result
+            return CH.value(value)
         }
 
         // wrap any collections with a DataflowQueue

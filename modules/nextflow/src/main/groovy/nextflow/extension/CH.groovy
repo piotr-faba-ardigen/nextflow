@@ -16,6 +16,8 @@ import nextflow.Global
 import nextflow.NF
 import nextflow.Session
 
+import static nextflow.Channel.STOP
+
 /**
  * Helper class to handle channel internal api ops
  *
@@ -103,6 +105,12 @@ class CH {
         return new DataflowQueue()
     }
 
+    static DataflowWriteChannel create(Collection items) {
+        def ret = create()
+        emit(ret, items)
+        return ret
+    }
+
     static boolean isChannel(obj) {
         obj instanceof DataflowReadChannel || obj instanceof DataflowWriteChannel
     }
@@ -122,11 +130,41 @@ class CH {
 
     static bind(DataflowWriteChannel channel, Object value) {
         if(NF.isDsl2()) {
-            session().igniters.add { channel.bind(value) }
+            session().addIgniter { channel.bind(value) }
         }
         else {
             channel.bind(value)
         }
     }
 
+    static DataflowVariable value() {
+        return new DataflowVariable()
+    }
+
+    static DataflowVariable value(obj) {
+        final result = new DataflowVariable()
+        bind(result, obj)
+        return result
+        }
+
+    static DataflowQueue queue() {
+        new DataflowQueue()
+        }
+
+    static DataflowQueue queue(Collection items, boolean close=false) {
+        final result = new DataflowQueue()
+        if( close )
+            items = new ArrayList(items); items.add(STOP)
+        emit(result, items)
+        return result
+    }
+
+    static void emit(DataflowWriteChannel ch, Collection items) {
+        if(NF.dsl2) {
+            session().addIgniter {-> for( def it : items ) ch.bind(it) }
+        }
+        else {
+            for( def it : items ) ch.bind(it)
+        }
+    }
 }
