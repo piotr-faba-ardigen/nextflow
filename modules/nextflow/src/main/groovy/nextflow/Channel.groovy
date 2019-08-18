@@ -152,7 +152,9 @@ class Channel  {
 
     static DataflowVariable value( obj = null ) {
         def result = new DataflowVariable()
-        if( obj != null ) result.bind(obj)
+        if( obj != null ) {
+            CH.bind(result, obj)
+        }
         return result
     }
 

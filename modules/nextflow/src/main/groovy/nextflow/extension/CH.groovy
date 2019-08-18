@@ -12,7 +12,10 @@ import groovyx.gpars.dataflow.expression.DataflowExpression
 import groovyx.gpars.dataflow.stream.DataflowStreamReadAdapter
 import groovyx.gpars.dataflow.stream.DataflowStreamWriteAdapter
 import nextflow.Channel
+import nextflow.Global
 import nextflow.NF
+import nextflow.Session
+
 /**
  * Helper class to handle channel internal api ops
  *
@@ -21,6 +24,10 @@ import nextflow.NF
 @Slf4j
 @CompileStatic
 class CH {
+
+    static private Session session() {
+        return (Session) Global.session
+    }
 
     static private Map<DataflowQueue, DataflowBroadcast> bridges = new HashMap<>(10)
 
@@ -111,6 +118,15 @@ class CH {
             }
         }
         return true
+    }
+
+    static bind(DataflowWriteChannel channel, Object value) {
+        if(NF.isDsl2()) {
+            session().igniters.add { channel.bind(value) }
+        }
+        else {
+            channel.bind(value)
+        }
     }
 
 }
