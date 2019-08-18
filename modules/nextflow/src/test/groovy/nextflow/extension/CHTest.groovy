@@ -2,8 +2,11 @@ package nextflow.extension
 
 import spock.lang.Specification
 
+import java.util.concurrent.TimeUnit
+
 import groovyx.gpars.dataflow.DataflowBroadcast
 import groovyx.gpars.dataflow.DataflowQueue
+import groovyx.gpars.dataflow.DataflowReadChannel
 import groovyx.gpars.dataflow.DataflowVariable
 import nextflow.NextflowMeta
 /**
@@ -54,6 +57,55 @@ class CHTest extends Specification {
         CH.allScalar([1, 2, 3])
         !CH.allScalar([new DataflowVariable(), new DataflowQueue()])
         !CH.allScalar([new DataflowQueue(), new DataflowQueue()])
+    }
+
+    def 'should check value' () {
+        when:
+        def v1 = CH.value()
+        then:
+        v1 instanceof DataflowVariable
+        !v1.isBound()
+
+        when:
+        def v2 = CH.value('hello')
+        then:
+        v2 instanceof DataflowVariable
+        v2.val == 'hello'
+    }
+
+    def 'should bind a value' () {
+        given:
+        def ch = new DataflowQueue()
+        when:
+        CH.bind(ch, 'hello')
+        then:
+        ch.val == 'hello'
+    }
+
+    def 'should emit a list of values' () {
+        given:
+        def ch = new DataflowQueue()
+        when:
+        CH.emit(ch, [1,2,3])
+        then:
+        ch.val == 1
+        ch.val == 2
+        ch.val == 3
+        and:
+        // no stop is emitted
+        ch.getVal(500, TimeUnit.MILLISECONDS) == null
+    }
+
+    def 'should create with values' () {
+        when:
+        def ch = (DataflowReadChannel)CH.create([1, 2, 3])
+        then:
+        ch.val == 1
+        ch.val == 2
+        ch.val == 3
+        and:
+        // no stop is emitted
+        ch.getVal(500, TimeUnit.MILLISECONDS) == null
     }
 
 }

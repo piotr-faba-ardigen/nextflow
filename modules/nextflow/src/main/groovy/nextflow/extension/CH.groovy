@@ -145,11 +145,11 @@ class CH {
         final result = new DataflowVariable()
         bind(result, obj)
         return result
-        }
+    }
 
     static DataflowQueue queue() {
         new DataflowQueue()
-        }
+    }
 
     static DataflowQueue queue(Collection items, boolean close=false) {
         final result = new DataflowQueue()
