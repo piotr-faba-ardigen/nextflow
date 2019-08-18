@@ -358,7 +358,7 @@ class ScriptIncludesTest extends Specification {
             val gamma
           script:
             delta = alpha
-            gamma = 'world\'
+            gamma = 'world'
             /nope/
         }
         
