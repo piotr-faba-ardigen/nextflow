@@ -20,24 +20,24 @@ import groovy.transform.CompileStatic
 import groovy.transform.EqualsAndHashCode
 
 /**
- * Models GPU resource request
+ * Models accelerator resource request
  * 
  * @author Paolo Di Tommaso <paolo.ditommaso@gmail.com>
  */
 @CompileStatic
 @EqualsAndHashCode
-class GpuResource {
+class AcceleratorResource {
 
     final Integer request
     final Integer limit
     final String type
     final String runtime
 
-    GpuResource( Number value ) {
+    AcceleratorResource(Number value ) {
         this(limit: value)
     }
 
-    GpuResource( Map res ) {
+    AcceleratorResource(Map res ) {
         if( res.limit!=null && res.request!=null ) {
             this.limit = res.limit as int
             this.request = res.request as int
