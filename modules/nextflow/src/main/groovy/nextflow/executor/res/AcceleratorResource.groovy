@@ -18,12 +18,14 @@ package nextflow.executor.res
 
 import groovy.transform.CompileStatic
 import groovy.transform.EqualsAndHashCode
+import groovy.transform.ToString
 
 /**
  * Models accelerator resource request
  * 
  * @author Paolo Di Tommaso <paolo.ditommaso@gmail.com>
  */
+@ToString(includeNames = true, includePackage = false)
 @CompileStatic
 @EqualsAndHashCode
 class AcceleratorResource {
@@ -33,11 +35,11 @@ class AcceleratorResource {
     final String type
     final String runtime
 
-    AcceleratorResource(Number value ) {
+    AcceleratorResource( Number value ) {
         this(limit: value)
     }
 
-    AcceleratorResource(Map res ) {
+    AcceleratorResource( Map res ) {
         if( res.limit!=null && res.request!=null ) {
             this.limit = res.limit as int
             this.request = res.request as int

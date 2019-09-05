@@ -386,7 +386,7 @@ class PodSpecBuilder {
 
     @PackageScope
     @CompileDynamic
-    Map addAcceleratorResources(AcceleratorResource accelerator, Map res ) {
+    Map addAcceleratorResources(AcceleratorResource accelerator, Map res) {
 
         if( res == null )
             res = new LinkedHashMap(2)
